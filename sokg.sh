@@ -1,158 +1,793 @@
 #!/usr/bin/env bash
-#sokg.sh - .:SERVER.OK.GRAPHIC:. For Linux with DirectAdmin & CPanel by .:DANIEL BUSTAMANTE:.
-printf "\n"
-echo "Initializing the DASHBOARD for your simplicity.."
-printf "\n"
-sleep 1
-if ps ax | grep -v grep | grep dialog > /dev/null 2>&1
-then 
-printf "\n"
-printf "\n"
-echo "¡OK! Executing .:SERVER.OK.GRAPHIC:. by .:DANIEL BUSTAMANTE:."
-printf "\n"
-printf "\n"
-sleep 4
-else 
-yum install dialog -y
-clear
-printf "\n"
-printf "\n"
-echo "¡OK! Executing .:SERVER.OK.GRAPHIC:. by .:DANIEL BUSTAMANTE:."
-printf "\n"
-printf "\n"
-sleep 4
-fi
+#sok.sh - .:SERVER OK:. For Linux with DirectAdmin & CPanel by .:DANIEL BUSTAMANTE:.
 
-# Store menu options selected by the user
-INPUT=/tmp/menu.sh.$$
-
-# Storage file for displaying cal and date command output
-OUTPUT=/tmp/output.sh.$$
-
-# get text editor or fall back to vi_editor
-vi_editor=${EDITOR-vi}
-
+#VARIABLES
 #identificamos el sistema operativo
     if cat /etc/redhat-release > /dev/null 2>&1
     then 
-    RedHat=$(cat /etc/redhat-release)
-    SO=$RedHat
+	    RedHat=$(cat /etc/redhat-release)
+	    SO=$RedHat
     else 
-     Debian=$(lsb_release -a)
-     SO=$Debian
+	    Debian=$(lsb_release -a)
+	    SO=$Debian
     fi
 #identificamos el panel de control y su versión
-if cat /usr/local/directadmin/custombuild/versions.txt > /dev/null 2>&1
-then
-DA=$(grep ^BUILDSCRIPT_VER /usr/local/directadmin/custombuild/build | cut -d= -f2)
-PANEL=$"DirectAdmin con CustomBuild $DA"
-PANELS=1
-else 
-WHM=$(/usr/local/cpanel/cpanel -V)
-PANEL=$"WHM $WHM"
-PANELS=2
-fi
-
+	if cat /usr/local/directadmin/custombuild/versions.txt > /dev/null 2>&1
+	then
+		DA=$(grep ^BUILDSCRIPT_VER /usr/local/directadmin/custombuild/build | cut -d= -f2)
+		PANEL=$"DirectAdmin con CustomBuild $DA"
+		PANELS=1
+	else 
+		WHM=$(/usr/local/cpanel/cpanel -V)
+		PANEL=$"WHM $WHM"
+		PANELS=2
+	fi
 #validamos el RDNS
-RDNS=$(getent hosts $HOSTNAME | awk '{ print $1 ; exit }')
-
+	RDNS=$(getent hosts $HOSTNAME | awk '{ print $1 ; exit }')
 #validamos el PTR
-PTR=$(dig +noall +answer -x $RDNS | awk '{print $5 ; exit}')
-
-
+	PTR=$(dig +noall +answer -x $RDNS | awk '{print $5 ; exit}')
 #informamos version de apache
-VersionAPACHE=$(httpd -v | awk {'print $3 ; exit'} | cut -d/ -f2)
-
+	VersionAPACHE=$(httpd -v | awk {'print $3 ; exit'} | cut -d/ -f2)
 #informamos version de mysql
-VersionMYSQL=$(mysql --version|awk '{ print $5 }'|awk -F\, '{ print $1 }')
+	VersionMYSQL=$(mysql --version|awk '{ print $5 }'|awk -F\, '{ print $1 }')
+#informamos cantidad de emails en la cola de emails
+	COLAexim=$(exim -bpc)
+#informamos sus DNS
+	DNS=$(cat /etc/resolv.conf | awk {'print $2'})
+#informamos la carga actual
+	Carga=$(cat /proc/loadavg | awk {'print $1 ; exit'})
+#informamos la carga hace 15 minutos
+	Carga15=$(cat /proc/loadavg | awk {'print $3 ; exit'})
+#informamos la fecha
+	Fecha=$(date +'%d-%m-%Y')
+#informamos la hora actual
+	Hora=$(date | awk {'print $4 , $5'})
+#informamos link temporales de usuarios
+	if [[ $PANELS == "1" ]] ; then
+	LinkUsuariosDA=$(cat /usr/local/directadmin/custombuild/options.conf | grep userdir_access)
+	if [[ $LinkUsuariosDA == *"yes"* ]]; then
+		ModUserDirstatus=Habilitado
+	else
+		ModUserDirstatus=Deshabilitado
+	fi
+	else
+	ModUserDirstatus=Deshabilitado
+	fi
+#informamos version del panel de control
+	if [[ $PANELS == "1" ]] ; then
+		PANELversion=$(/usr/local/directadmin/directadmin v | awk  '{print $3 }')
+	else
+		PANELversion=$(/usr/local/cpanel/cpanel -V | awk {'print $1'})
+	fi
+
+#informamos la version de exim
+	VersionEXIM=$(exim -bV | awk {'print $3 ; exit'})
 
 #informamos versiones y modos de php
-#VersionesPHP=$(cat /usr/local/directadmin/custombuild/options.conf | grep php | grep release)
-#VersionesModoPHP=$(cat /usr/local/directadmin/custombuild/options.conf | grep php | grep mode)
-#echo "7. Sus versiones php son:"
-#echo "$VersionesPHP"
-#sleep 3
-#echo "y operan en los siguientes modos:"
-#echo "$VersionesModoPHP"
-#printf "\n"
-#sleep 4
+	if [[ $PANELS == "1" ]] ; then
+		VersionesPHP=$(cat /usr/local/directadmin/custombuild/options.conf | grep php | grep release)
+		VersionesModoPHP=$(cat /usr/local/directadmin/custombuild/options.conf | grep php | grep mode)
+	else
+		VersionesPHP=$(/usr/local/cpanel/bin/rebuild_phpconf -current)
+	fi
 
-# trap and delete temp files
-trap "rm $OUTPUT; rm $INPUT; exit" SIGHUP SIGINT SIGTERM
+#informamos si let's encryt esta habilitado
+	if [[ $PANELS == "1" ]] ; then
+		letsencryt=$(/usr/local/directadmin/directadmin c | grep letsencrypt= | cut -d= -f2)
+		if [[ $letsencryt == *"1"* ]]; then
+		letsencrytstatus=Habilitado
+		else
+		letsencrytstatus=Deshabilitado
+		fi
 
-#
-# Purpose - display output using msgbox 
-#  $1 -> set msgbox height
-#  $2 -> set msgbox width
-#  $3 -> set msgbox title
-#
-function display_output(){
-    local h=${1-30}         # box height default 10
-    local w=${2-71}         # box width default 41
-    local t=${3-Output}     # box title 
-    dialog --backtitle ".:SERVER.OK.GRAPHIC:. For Linux with DirectAdmin & CPanel by .:DANIEL BUSTAMANTE:." --title "${t}" --clear --msgbox "$(<$OUTPUT)" ${h} ${w}
-}
-#
-# Purpose - display current system date & time
-#
-function show_date(){
-    echo "Today is $(date) @ $(hostname -f)." >$OUTPUT
-    display_output 6 60 "Date and Time"
-}
-#
-# Purpose - display a calendar
-#
-function show_calendar(){
-    cal >$OUTPUT
-    display_output 13 25 "Calendar"
-}
-#
-# proposito - mostrar info del sistema
-#
-function mostrar_info(){
-   
-echo "1. Hostname: $HOSTNAME \n\\n\
-2. Reverso de Hostname: $RDNS \n\\n\
-3. PTR de IP: $PTR \n\\n\
-4. Sistema Operativo: $SO \n\\n\
-5. Panel de Control: $PANEL \n\\n\
-6. Apache: $VersionAPACHE \n\\n\
-7. MySQL: $VersionMYSQL \n\n\ " >$OUTPUT
+	else
+	
+	if [[ $PANELS == "2" &&  $SO == *"Cloud"* ]] ; then
+	letsencryt=$(/usr/local/cpanel/bin/whmapi1 get_autossl_providers | grep enable)
+		if [[ $letsencryt == *"1"* ]]; then
+		letsencrytstatus=Habilitado
+		else
+		letsencrytstatus=Deshabilitado
+		fi
+	else
+		letsencryt=$(whmapi1 get_autossl_providers | grep enabled)
+		if [[ $letsencryt == *"1"* ]]; then
+		letsencrytstatus=Habilitado
+		else
+		letsencrytstatus=Deshabilitado
+		fi
+	fi
+	fi
 
-    display_output 30 85 "Informacion del Sistema"
+#informamos el top 5 de las cuentas con más envios realizados
+	if [[ $PANELS == "1" ]] ; then
+		topemisores=$(exim -bpc)
+	else
+		topemisores=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | head -5)
+	fi
+
+
+# ----------------------------------
+# VARIABLES DEL MENU
+# ----------------------------------
+EDITOR=vim
+PASSWD=/etc/passwd
+RED='\033[0;41;30m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+STD='\033[0;0;39m'
+ 
+#FIN VARIABLES
+
+# ----------------------------------
+# FUNCIONES
+# ----------------------------------
+pause(){
+	printf "\n"
+	printf "\n"
+  	read -p "Presiona [ENTER] para volver volver al MENU PRINCIPAL..." fackEnterKey
+  	printf "\n"
 }
-#
-# set infinite loop
-#
+
+uno(){
+	echo -e "${GREEN}Hostname:${STD} $HOSTNAME
+${GREEN}Reverso de Hostname:${STD} $RDNS
+${GREEN}PTR de IP:${STD} $PTR
+${GREEN}Sistema Operativo:${STD} $SO
+${GREEN}Panel de Control:${STD} $PANEL
+${GREEN}Version de Panel:${STD} $PANELversion
+${GREEN}Let's Encryt:${STD} $letsencrytstatus
+${GREEN}ModUserDIR /~:${STD} $ModUserDirstatus
+${GREEN}Carga actual:${STD} $Carga
+${GREEN}Carga hace 15 minutos:${STD} $Carga15
+${GREEN}Fecha:${STD} $Fecha
+${GREEN}Hora:${STD} $Hora
+${GREEN}Apache:${STD} $VersionAPACHE
+${GREEN}MySQL:${STD} $VersionMYSQL
+${GREEN}Exim:${STD} $VersionEXIM
+${GREEN}Correos en cola:${STD} $(exim -bpc)
+${GREEN}Top 5 emisores:${STD}
+$topemisores
+${GREEN}Versiones de PHP:${STD}
+$VersionesPHP
+$VersionesModoPHP
+${GREEN}DNS:${STD}
+$DNS
+ \n
+
+"
+    pause
+}
+ 
+# do something in two()
+dos(){
+
+	#obtenemos todas las ip del servidor
+	IPS=$(ip addr show scope global | awk '$1 ~ /^inet/ {print $2}' | sort)
+	echo "Este servidor posee las siguientes IP en su interfaz:"
+	echo "$IPS"
+	printf "\n"
+	sleep 3	
+	#validamos ping de todas las IP del servidor
+	ip addr show scope global | awk '$1 ~ /^inet/ {print $2}' | cut -f1 -d "/" -s | sort > ipdelservidor.txt
+    echo "Realizando ping localmente a las IP de su interfaz:"
+	cat ipdelservidor.txt |  while read output
+	
+	do
+	    ping -c 1 "$output" > /dev/null
+	    if [ $? -eq 0 ]; then
+	    	echo -e "IP $output ${GREEN}OK responde ping${STD}" 
+	    else
+	    	echo -e "IP $output ${RED}¡NO responde ping!${STD}"
+	    fi
+	done
+	sleep 3
+	printf "\n"
+	printf "\n"
+	#validamos ping de todas las IP del servidor
+	ip addr show scope global | awk '$1 ~ /^inet/ {print $2}' | cut -f1 -d "/" -s | sort > ipdelservidor.txt
+    echo "Realizando ping externamente a las IP de su interfaz:"
+	cat ipdelservidor.txt |  while read output
+	
+	do
+	    ping -c 1 "$output" > /dev/null
+	    if [ $? -eq 0 ]; then
+	    	echo -e "IP $output ${GREEN}OK responde ping${STD}" 
+	    else
+	    	echo -e "IP $output ${RED}¡NO responde ping!${STD}"
+	    fi
+	done
+	sleep 3
+
+    pause
+}
+ 
+tres(){
+
+#Matamos procesos de backup (compresión y tareas del panel) en DirectAdmin y WHM
+
+killall -9 gzip > /dev/null 2>&1 ; killall -9 tar > /dev/null 2>&1 ; killall -9 dataskq > /dev/null 2>&1 ; killall -9 cpbackup > /dev/null 2>&1 ; killall -9 pkgacct  > /dev/null 2>&1; killall -9 gunzip2  > /dev/null 2>&1 ; killall -9 pig z > /dev/null 2>&1
+
+#DISCO: Verificamos el espacio en disco del servidor
+		printf "\n"
+		echo "Validaremos el espacio del disco de este servidor:"
+		printf "\n"
+		echo "$(df -h)"
+		printf "\n"
+		sleep 3
+		df -H | grep -vE '^Filesystem|tmpfs|cdrom' | awk '{ print $5 " " $1 }' | while read output;
+		do
+		  echo $output
+		  usep=$(echo $output | awk '{ print $1}' | cut -d'%' -f1  )
+		  particion=$(echo $output | awk '{ print $2 }' )
+		  if [ $usep -ge 95 ]; then
+		  echo -e "${RED}La partición \"$particion ($usep%)\" tiene más de 95% de su dico lleno, se deberia hacer limpieza${STD}"
+		  fi
+		done  
+		  printf "\n"
+
+	
+		#do
+		 read -r -p "Indica si deseas liberar o no espacio en este servidor [SI/NO] " input
+		 
+		 case $input in
+		     [sS][iI][si]|[SI])
+
+		 echo "¡Genial! vamos a liberar espacio en este equipo"
+		 #DISCO: Borramos  tar.gz, .tar, .tar.bz2, .bz2, .tar.gzip, .tgz, .gz, .rar, .zip
+							printf "\n"
+							echo "El espacio en disco actual es:"
+							discoahora=$(df -H | grep -vE '^Filesystem|tmpfs|cdrom' | awk '{ print $3 " " $5 " " $1 }')
+							echo "$discoahora"
+							printf "\n"
+							sleep 4
+							printf "\n"
+							echo "Intentaré optimizar mejor este espacio, aguarda por favor, tómate un café..."
+
+							  find / -name "*.tar.gz" -type f -exec rm -rf {} > /dev/null 2>&1 \;
+							  find / -name "*.tar" -type f -exec rm -rf {} > /dev/null 2>&1 \;
+							  find / -name "*.tar.bz2" -type f -exec rm -rf {} > /dev/null 2>&1 \;
+							  find / -name "*.bz2" -type f -exec rm -rf {} > /dev/null 2>&1 \;
+							  find / -name "*.tar.gzip" -type f -exec rm -rf {} > /dev/null 2>&1 \;
+							  find / -name "*.tgz" -type f -exec rm -rf {} > /dev/null 2>&1 \;
+							  find / -name "*.gz" -type f -exec rm -rf {} > /dev/null 2>&1 \;
+							  find / -name "*.rar" -type f -exec rm -rf {} > /dev/null 2>&1 \;
+							  find / -name "*.zip" -type f -exec rm -rf {} > /dev/null 2>&1 \;
+
+							  if [[ $PANELS == "1" ]] ; then
+							  	cd /home/tmp
+							  	rm -rf admin.*
+							  fi
+							  if [[ $PANELS == "2" ]] ; then
+							  	for user in `/bin/ls -A /var/cpanel/users` ; do rm -fv /home/$user/backup-*$user.tar.gz ; done > /dev/null 2>&1 
+							  fi
+							 sleep 4
+							printf "\n"
+							printf "\n"
+							echo "Se finalizaron las tareas, el nuevo espacio en disco es:"
+							discodespues=$(df -H | grep -vE '^Filesystem|tmpfs|cdrom' | awk '{ print $5 " " $1 }')
+							echo "$discodespues"
+							sleep 5 ; pause
+		 		;;
+
+		     [nN][no]|[NO])
+		printf "\n"
+		 echo "OK, no se realizará limpieza ni optimización del disco" ; pause
+
+		        ;;
+		     *)
+		printf "\n"
+		 echo "Mmmm.. tómate un café, elegiste una opción incorrecta"
+		 ;;
+		 esac
+		#done
+
+		sleep 8
+        pause
+}
+
+cuatro(){
+
+		#EXIM: Verificamos el estado, los puertos y lo reiniciamos si está detenido y limpiamos emails frizados y con más de 1 dia en espera de distribución.
+		SERVICE='exim'
+		COLA=$(exim -bpc)
+
+		if ps ax | grep -v grep | grep $SERVICE > /dev/null
+		then
+			echo -e "${GREEN}¡Genial! el servicio $SERVICE esta operando de forma normal${STD} y actualmente se posee $COLA correos en su bandeja de salida"
+		else
+			echo -e "${RED}¡Ups! el servicio $SERVICE esta detenido${STD}, voy a reiniciarlo y validar su operatividad:"
+			printf "\n"
+			service $SERVICE restart;
+			sleep 6
+			service $SERVICE status;
+		fi
+
+		sleep 8
+		printf "\n"
+		echo -e "de los $COLA emails en la bandeja de salida se procederá a limpiar los que están ${RED}frizados${STD}:"
+		sleep 6
+		FRIZADOS=$(exiqgrep -zi | wc -l)
+		if [ "$FRIZADOS" -ge "1" ]; then
+			printf "\n"
+			echo -e "Se encontraron $FRIZADOS emails ${RED}frizados${STD}, se los eliminará de la bandeja de salida.."
+			printf "\n"
+			sleep 2
+		 exiqgrep -zi|xargs exim -Mrm
+		 COLASINFRIZADOS=$(exim -bpc)
+		 	printf "\n"
+		 	printf "\n"
+		 	echo -e "${GREEN}¡Listo!${STD} ahora solo quedan $COLASINFRIZADOS emails en la bandeja de salida sin estar frizados"
+		 sleep 4
+		else
+		 printf "\n"
+		 echo -e "${GREEN}¡Genial!${STD} no se encontraron emails frizados"
+		 sleep 4
+		fi
+		 printf "\n"
+		 echo "de los $COLASINFRIZADOS emails restantes en la bandeja de salida limpiaré los que están detenidos hace más de 1 dia.."
+		 printf "\n"
+		 sleep 4
+		DETENIDOSUNDIA=$(exiqgrep -o 86400 -i | wc -l)
+		if [ "$DETENIDOSUNDIA" -ge "1" ]; then
+		echo "Se encontraron $DETENIDOSUNDIA emails detenidos hace 1 dia, voy a limpiarlos.."
+		 printf "\n"
+		 sleep 2
+		 exiqgrep -o 86400 -i | xargs exim -Mrm
+		 COLASINDETENIDOS=$(exim -bpc)
+		 printf "\n"
+		 printf "\n"
+		 echo -e "${GREEN}¡Listo!${STD} ahora solo quedan $COLASINDETENIDOS emails en la bandeja de salida en estado normales para su distribución"
+		 sleep 4
+		else
+		 echo -e "${GREEN}¡Genial!${STD} no se encontraron emails detenidos por 1 día, ningún correo normal será afectado para su distribución actual."
+		fi
+
+		sleep 4
+
+		if [[ $PANELS == "2" &&  $SO == *"Cloud"* ]] ; then
+
+		#identificamos la cuenta de email con mayores envios
+		emailspammer=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | awk {'print $2'} | head -1)
+		#identificamos la cantidad de envios que realizo dicha cuenta de email
+		enviosdelspammer=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | awk {'print $1'} | head -1)
+		#identificamos el dominio de esa cuenta de email
+		dominiospammer=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | awk {'print $2'} | head -1 | cut -d@ -f2)
+		#identificamos el usuario propietario de ese dominio
+		usuariospammer=$(/scripts/whoowns $dominiospammer)
+		
+
+		echo -e "La cuenta ${RED}$emailspammer${STD} realizó ${RED}$enviosdelspammer${STD} envios.."
+		#while true
+		#do
+		  read -r -p "¿Deseas suspender sus envios si los considera abusivos? [SI/NO] " input
+
+		  case $input in
+		      [sS][si][SI]|[iI])
+		      
+				#deshabilitamos los envios de ese usuario para CloudLinux
+				/usr/local/cpanel/bin/whmapi1 suspend_outgoing_email user=$usuariospammer
+
+				#informamos lo realizado
+				echo -e "Se deshabilitaron los envios la cuenta ${RED}$emailspammer${STD} porque se detectaron ${RED}$enviosdelspammer${STD} envios abusivos"
+				printf "\n"
+				printf "\n"
+				echo -e "limpiaremos los envios generado únicamente por la cuenta ${RED}$emailspammer${STD} de la cola del servidor"
+				printf "\n"
+				#borramos de la cola de envios masivos realizados por la cuenta spammer
+				exim -bp | grep '$emailspammer' | awk '{print $3}' | xargs exim -Mrm > /dev/null 2>&1
+				sleep 4
+				echo -e "${GREEN}¡Genial!${STD} ningún otro correo normal será afectado para su distribución actual."
+				printf "\n"
+				printf "\n"
+		      ;;
+		      [nN][oO]|[nN])
+		      echo "No"
+		            ;;
+		      *)
+		    echo "Invalid input..."
+		    ;;
+		  esac
+		#done
+
+
+		else
+
+		#identificamos la cuenta de email con mayores envios
+		emailspammer=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | awk {'print $2'} | head -1)
+		#identificamos la cantidad de envios que realizo dicha cuenta de email
+		enviosdelspammer=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | awk {'print $1'} | head -1)
+		#identificamos el dominio de esa cuenta de email
+		dominiospammer=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | awk {'print $2'} | head -1 | cut -d@ -f2)
+		#identificamos el usuario propietario de ese dominio
+		usuariospammer=$(/scripts/whoowns $dominiospammer)	
+
+		echo -e "La cuenta ${RED}$emailspammer${STD} realizó ${RED}$enviosdelspammer${STD} envios.."
+		#while true
+		#do
+		 read -r -p "¿Deseas suspender sus envios si los considera abusivos? [SI/NO] " input
+
+		  case $input in
+		      [sS][si][SI]|[iI])
+		      
+				#deshabilitamos los envios de ese usuario para CloudLinux
+				whmapi1 suspend_outgoing_email user=$usuariospammer
+
+				#informamos lo realizado
+				echo -e "Se deshabilitaron los envios la cuenta ${RED}$emailspammer${STD} porque se detectaron ${RED}$enviosdelspammer${STD} envios abusivos"
+				printf "\n"
+				printf "\n"
+				echo -e "limpiaremos los envios generado únicamente por la cuenta ${RED}$emailspammer${STD} de la cola del servidor"
+				printf "\n"
+				#borramos de la cola de envios masivos realizados por la cuenta spammer
+				exim -bp | grep '$emailspammer' | awk '{print $3}' | xargs exim -Mrm > /dev/null 2>&1
+				sleep 4
+				echo -e "${GREEN}¡Genial!${STD} ningún otro correo normal será afectado para su distribución actual."
+				printf "\n"
+				printf "\n"
+
+		      ;;
+		      [nN][oO]|[nN])
+		      echo "No"
+		            ;;
+		      *)
+		    echo "Invalid input..."
+		    ;;
+		  esac
+		#done
+
+		fi
+        pause
+}
+
+cinco(){
+
+		#ACTUALIZACIONES de RPM: Verificamos los últimos repositorios de yum update
+		printf "\n"
+		echo "Actualizaremos los RPM para futuras actualizaciones de este servidor sin modificar el Kernel"
+		printf "\n"
+		sleep 2
+		yum clean all #limpiar y actualizar lista de repositorios
+		yum upgrade -y #actualizar repositorios
+		yum -y --exclude=kernel\* update #acualizar sin modificar el kernel
+		sleep 2
+		printf "\n"
+		echo -e "${GREEN}¡Listo! se han instalado las ultimas dependencias para los RPM${STD}"
+        sleep 2
+ 		printf "\n"
+		echo "Instalaremos Let's Encryt en breve.."
+		printf "\n"
+
+		#instalaremos Let's Encrytp en DirectAdmin
+		if [[ $PANELS == "1" ]] ; then
+			echo "letsencrypt=1" >> /usr/local/directadmin/conf/directadmin.conf
+			service directadmin restart
+			echo "enable_ssl_sni=1" >> /usr/local/directadmin/conf/directadmin.conf
+			service directadmin restart
+			cd /usr/local/directadmin/custombuild
+			./build update
+			./build rewrite_confs
+			printf "\n"
+			echo -e "${GREEN}¡Genial! Let's Encryt quedo instalado y listo para usarse${STD}"
+			printf "\n"
+			printf "\n"
+		else
+		#instalaremos Let's Encrytp en WHM
+			/scripts/install_lets_encrypt_autossl_provider
+			printf "\n"
+			echo -e "${GREEN}¡Genial! Let's Encryt quedo instalado y listo para usarse${STD}"
+			printf "\n"
+			printf "\n"
+
+	        pause
+    	fi
+		}
+
+seis(){
+
+		printf "\n"
+		SudoVerahora=$(sudo -V | grep version)
+		echo "$SudoVerahora"
+		sleep 3
+		#ACTUALIZACIONES de RPM: Verificamos los últimos repositorios de yum update
+		printf "\n"
+		echo "Actualizaremos los RPM para estar al día y sin modificar el Kernel"
+		printf "\n"
+		sleep 2
+		yum clean all #limpiar y actualizar lista de repositorios
+		yum upgrade -y #actualizar repositorios
+		yum -y --exclude=kernel\* update #acualizar sin modificar el kernel
+		sleep 2
+		printf "\n"
+		echo -e "${GREEN}¡Listo! se han instalado las ultimas Actualizaciones para el servidor${STD}"
+		printf "\n"
+		SudoVerdespues=$(sudo -V | grep version)
+		echo "$SudoVerdespues"
+        sleep 2
+	
+        pause
+}
+
+siete(){
+
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos NGINX + Apache como WebServer en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración necesaria..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build update
+		./build set webserver nginx_apache
+		./build nginx_apache
+		./build php n
+		./build rewrite_confs
+		sleep 2
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya verás más eficiente a tu WebServer{STD}"
+		printf "\n"
+
+        pause
+}
+
+ocho(){
+		printf "\n"
+		echo "¡Vamos a purgar la QUEUE de emails de este servidor!"
+		printf "\n"
+		sleep 2
+		echo -e "${GREEN}Posee la siguiente cantidad de emails:${STD} $(exim -bpc)"
+		printf "\n"
+		sleep 3
+		#eliminamos todo la queue1|
+		echo "Ok, los estoy limpiando de la QUEUE..."
+		sleep 2
+		cd /var/spool/exim/input
+		yes|rm -r * > /dev/null 2>&1
+		sleep 3
+		printf "\n"
+		#reiniciamos exim y dovecot
+		echo "ahora reiniciaremos los servicios de emails.."
+		printf "\n"
+		service exim restart
+		service dovecot
+		printf "\n"
+		#
+		echo "¡Listo! se purgó la QUEUE de emails de este servidor."
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "${GREEN}La nueva cola de correos es:${STD} $(exim -bpc)"
+		printf "\n"
+        pause
+}
+
+nueve(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! Instalaremos el CSF - Firewall en este servidor${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Ok, realizando la instalación.."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /
+		#wget http://www.configserver.com/free/csf.tgz
+		wget https://download.configserver.com/csf.tgz
+		tar -xzf csf.tgz
+		cd csf
+		sh install.sh
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo!${STD} completada la instalación, veamos el ${GREEN}RESULTADO:${STD}"
+		printf "\n"
+		#Next, test whether you have the required iptables modules:
+		perl /usr/local/csf/bin/csftest.pl | grep RESULT
+
+        pause
+}
+
+diez(){
+
+		printf "\n"
+		echo -e "${GREEN}¡Genial! analizaremos el /etc/my.cnf/ de este servidor${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Ok, comencemos el análisis..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /
+		wget https://github.com/major/MySQLTuner-perl/archive/master.zip
+		unzip master.zip
+		cd MySQLTuner-perl-master
+		./mysqltuner.pl
+		sleep 4
+		printf "\n"
+		echo -e "${GREEN}¡Listo!${STD} revisa en el diagnóstico de lo que se pueda ${GREEN}Optimizar${STD}"
+		printf "\n"
+
+        pause
+}
+
+once(){
+		printf "\n"
+		printf "\n"
+		echo -e "Inicializando la ${GREEN}MATRIX..${STD} Presiona CTRL + C para salir luego al MENU"
+		printf "\n"
+		sleep 4
+		#Matrix
+		Matrix=$(echo -e "\e[1;40m" ; clear ; while :; do echo $LINES $COLUMNS $(( $RANDOM % $COLUMNS)) $(( $RANDOM % 72 )) ;sleep 0.05; done|awk '{ letters="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()"; c=$4; letter=substr(letters,c,1);a[$3]=0;for (x in a) {o=a[x];a[x]=a[x]+1; printf "\033[%s;%sH\033[2;32m%s",o,x,letter; printf "\033[%s;%sH\033[1;37m%s\033[0;0H",a[x],x,letter;if (a[x] >= $1) { a[x]=0; } }}')
+		echo $Matrix
+		pause
+}
+doce(){
+
+        pause
+}
+trece(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO{STD}"
+		printf "\n"
+
+		pause
+}
+catorce(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO{STD}"
+		printf "\n"
+
+		pause
+}
+quince(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO{STD}"
+		printf "\n"
+
+		pause
+}
+dieciseis(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO{STD}"
+		printf "\n"
+
+		pause
+}
+
+# function to display menus
+show_menus() {
+	clear
+
+	echo -e "${GREEN}==============================================================================================${STD}"
+    echo -e " ${GREEN} - .: MENU PRINCIPAL DE LA APLICACION :. - .:SERVER.OK:. for Linux with DirectAdmin & CPanel ${STD} "
+	echo -e "${GREEN}==============================================================================================${STD}"
+	echo "0) Salir de la aplicacion"
+	echo "1) Informacion del servidor"
+	echo "2) Ping a las IP del servidor"
+	echo "3) Hacer espacio en disco del servidor"
+	echo "4) Detener spammers y limpiar QUEUE de emails"
+	echo "5) Habilitar let's encryt"
+	echo "6) (CVE-2019-14287) Actualizar los RPM y SUDO"
+	echo "7) NGINX como proxy reverso (DirectAdmin)"
+	echo "8) Purgar QUEUE entera de Emails"
+	echo "9) Instalar CSF / WAF / Firewall."
+	echo "10) Analizar MY.CNF del SQL"
+	echo "11) NADA POR AHORA."
+	echo "12) Permitir links temporales mediante /~ (DirectAdmin)"
+	echo "13) NADA POR AHORA."
+	echo "14) NADA POR AHORA."
+	echo "15) NADA POR AHORA."
+	echo "16) NADA POR AHORA."
+	echo "17) NADA POR AHORA."
+	echo "18) NADA POR AHORA."
+	echo "19) NADA POR AHORA."
+	echo "20) NADA POR AHORA."
+	printf "\n"
+	echo -e "${GREEN}----------------------------------------------------------------------------------------------${STD}"
+	printf "\n"
+	printf "\n"
+}
+# read input from the keyboard and take a action
+# invoke the one() when the user select 1 from the menu option.
+# invoke the two() when the user select 2 from the menu option.
+# Exit when user the user select 3 form the menu option.
+read_options(){
+	local choice
+	read -p "SELECCIONA un NUMERO para tu OPCION [ 1 - 20 ]  y luego presiona ENTER: " choice
+	printf "\n"
+	case $choice in
+		0) clear ; exit 0 ;;
+		1) uno ;;
+		2) dos ;;
+		3) tres ;;
+		4) cuatro;;
+		5) cinco;;
+		6) seis;;
+		7) siete;;
+		8) ocho;;
+		9) nueve;;
+		10) diez;;
+		11) once;;
+		12) doce;;
+		13) trece;;
+		14) catorce;;
+		15) quince;;
+		16) dieciseis;;
+		17) diecisiete;;
+		18) dieciocho;;
+		19) diecinueve;;
+		20) veinte;;
+		*) echo -e "${RED}¡UPS! Presionaste una tecla erronea, [ESPERA] y vuelve a elegir...${STD}" && sleep 2
+	esac
+}
+ 
+# ----------------------------------------------
+# Step #3: Trap CTRL+C, CTRL+Z and quit singles
+# ----------------------------------------------
+trap '' SIGINT SIGQUIT SIGTSTP
+ 
+# -----------------------------------
+# Step #4: Main logic - infinite loop
+# ------------------------------------
 while true
 do
-
-### display main menu ###
-dialog --clear  --help-button --backtitle ".:SERVER.OK.GRAPHIC:. For Linux with DirectAdmin & CPanel by .:DANIEL BUSTAMANTE:." \
---title "[ MENU PRINCIPAL ]" \
---menu "Navega con las flechas ARRIBA/ABAJO o bien con la primera LETRA de tu opción.\n\\n\
-Marca tu opción y presiona ENTER por favor:" 25 70 9 \
-Informacion "Resumen del servidor" \
-Date/time "Displays date and time" \
-Calendar "Displays a calendar" \
-Editor "Start a text editor" \
-Exit "Exit to the shell" 2>"${INPUT}"
-
-menuitem=$(<"${INPUT}")
-
-
-# make decsion 
-case $menuitem in
-    Informacion) mostrar_info;;
-    Date/time) show_date;;
-    Calendar) show_calendar;;
-    Editor) $vi_editor;;
-    Exit) clear; echo "¡Thanks for use .:SERVER.OK.GRAPHIC:. by .:DANIEL BUSTAMANTE:.! Have a nice day"; break;;
-    
-esac
-
+ 
+	show_menus
+	read_options
 done
-
-# if temp files found, delete em
-[ -f $OUTPUT ] && rm $OUTPUT
-[ -f $INPUT ] && rm $INPUT
