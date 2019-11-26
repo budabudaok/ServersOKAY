@@ -11,7 +11,7 @@
 	    Debian=$(lsb_release -a)
 	    SO=$Debian
     fi
-#identificamos el panel de control y su versión
+#identificamos el panel de control y su versión, importante para otras funciones
 	if cat /usr/local/directadmin/custombuild/versions.txt > /dev/null 2>&1
 	then
 		DA=$(grep ^BUILDSCRIPT_VER /usr/local/directadmin/custombuild/build | cut -d= -f2)
@@ -63,6 +63,9 @@
 #informamos la version de exim
 	VersionEXIM=$(exim -bV | awk {'print $3 ; exit'})
 
+#informamos los puertos smtp
+  	PuertosSMTP=$(cat /etc/exim.conf | grep daemon_smtp_ports |cut -d= -f2 | head -1)
+
 #informamos versiones y modos de php
 	if [[ $PANELS == "1" ]] ; then
 		VersionesPHP=$(cat /usr/local/directadmin/custombuild/options.conf | grep php | grep release)
@@ -106,6 +109,12 @@
 		topemisores=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | head -5)
 	fi
 
+#hacemos telnet al puerto 25, 587,
+
+	#obtenemos todas las ip del servidor
+
+
+
 
 # ----------------------------------
 # VARIABLES DEL MENU
@@ -130,22 +139,18 @@ pause(){
 }
 
 uno(){
-	echo -e "${GREEN}Hostname:${STD} $HOSTNAME
-${GREEN}Reverso de Hostname:${STD} $RDNS
+	echo -e "${GREEN}Hostname:${STD} $HOSTNAME 
+${GREEN}Reverso de Hostname:${STD} $RDNS 
 ${GREEN}PTR de IP:${STD} $PTR
-${GREEN}Sistema Operativo:${STD} $SO
-${GREEN}Panel de Control:${STD} $PANEL
-${GREEN}Version de Panel:${STD} $PANELversion
-${GREEN}Let's Encryt:${STD} $letsencrytstatus
-${GREEN}ModUserDIR /~:${STD} $ModUserDirstatus
-${GREEN}Carga actual:${STD} $Carga
-${GREEN}Carga hace 15 minutos:${STD} $Carga15
-${GREEN}Fecha:${STD} $Fecha
-${GREEN}Hora:${STD} $Hora
+${GREEN}Sistema Operativo:${STD} $SO 
+${GREEN}Panel de Control:${STD} $PANEL ${GREEN}Version de Panel:${STD} $PANELversion
+${GREEN}Let's Encryt:${STD} $letsencrytstatus ${GREEN}ModUserDIR /~:${STD} $ModUserDirstatus
+${GREEN}Carga actual:${STD} $Carga ${GREEN}Carga hace 15 minutos:${STD} $Carga15
+${GREEN}Fecha:${STD} $Fecha ${GREEN}Hora:${STD} $Hora
 ${GREEN}Apache:${STD} $VersionAPACHE
 ${GREEN}MySQL:${STD} $VersionMYSQL
-${GREEN}Exim:${STD} $VersionEXIM
-${GREEN}Correos en cola:${STD} $(exim -bpc)
+${GREEN}CSF:${STD} $(csf -V | cut -d: -f2)
+${GREEN}Exim:${STD} $VersionEXIM ${GREEN}Puertos SMTP:${STD} $PuertosSMTP ${GREEN}Correos en cola:${STD} $(exim -bpc)
 ${GREEN}Top 5 emisores:${STD}
 $topemisores
 ${GREEN}Versiones de PHP:${STD}
@@ -481,29 +486,83 @@ cinco(){
 
 	        pause
     	fi
+
+	    	#actualizaremos el status de si let's encryt esta habilitado
+		if [[ $PANELS == "1" ]] ; then
+			letsencryt=$(/usr/local/directadmin/directadmin c | grep letsencrypt= | cut -d= -f2)
+			if [[ $letsencryt == *"1"* ]]; then
+			letsencrytstatus=Habilitado
+			else
+			letsencrytstatus=Deshabilitado
+			fi
+
+		else
+		
+		if [[ $PANELS == "2" &&  $SO == *"Cloud"* ]] ; then
+		letsencryt=$(/usr/local/cpanel/bin/whmapi1 get_autossl_providers | grep enable)
+			if [[ $letsencryt == *"1"* ]]; then
+			letsencrytstatus=Habilitado
+			else
+			letsencrytstatus=Deshabilitado
+			fi
+		else
+			letsencryt=$(whmapi1 get_autossl_providers | grep enabled)
+			if [[ $letsencryt == *"1"* ]]; then
+			letsencrytstatus=Habilitado
+			else
+			letsencrytstatus=Deshabilitado
+			fi
+		fi
+		fi
+
 		}
 
 seis(){
 
 		printf "\n"
-		SudoVerahora=$(sudo -V | grep version)
-		echo "$SudoVerahora"
-		sleep 3
-		#ACTUALIZACIONES de RPM: Verificamos los últimos repositorios de yum update
+		echo -e "${GREEN}Vamos a setear la zona horaria a UTC-3 para este servidor:${STD}"
 		printf "\n"
-		echo "Actualizaremos los RPM para estar al día y sin modificar el Kernel"
+		printf "\n"
+		#guardamos la hora actual
+		horaanterior=$(date)
+		sleep 2
+		echo -e "Estoy aplicando la configuración para el Sistema Operativo..."
+		#actualizamos el timezone manualente
+		cp /etc/localtime /root/old.timezone
+		rm /etc/localtime
+		ln -s /usr/share/zoneinfo/America/Argentina/Buenos_Aires /etc/localtime
+		#instalamos el Network Time Protocol
+		sleep 2
+		printf "\n"
+		printf "\n"
+		echo -e "Listo, ahora instalaremos NTP (Network Time Protocol).."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		yum install ntp ntpdate ntp-doc -y
+		#reemplazar pool por servidores de argentina
+		#sed -i 's/190.105.235.102/190.183.63.113/g' /etc/ntp.conf
+		/etc/init.d/ntpd start > /dev/null
+		service ntpd start > /dev/null
+		printf "\n"
 		printf "\n"
 		sleep 2
-		yum clean all #limpiar y actualizar lista de repositorios
-		yum upgrade -y #actualizar repositorios
-		yum -y --exclude=kernel\* update #acualizar sin modificar el kernel
+		echo -e "Bien, luego actualiza el TimeZone en PHP de ser necesario.."
+		printf "\n"
+		printf "\n"
+
+		#/usr/local/php*/lib/php.ini
 		sleep 2
 		printf "\n"
-		echo -e "${GREEN}¡Listo! se han instalado las ultimas Actualizaciones para el servidor${STD}"
+		echo -e "${GREEN}¡Bien! verifica en estos momentos la hora del servidor:${STD}"
 		printf "\n"
-		SudoVerdespues=$(sudo -V | grep version)
-		echo "$SudoVerdespues"
-        sleep 2
+		printf "\n"
+		echo -e "Anterior FECHA Y HORA: $horaanterior"
+		printf "\n"
+		echo -e "Nueva FECHA Y HORA: $(date)"
+		printf "\n"
+		sleep 2
+	
 	
         pause
 }
@@ -527,7 +586,7 @@ siete(){
 		./build rewrite_confs
 		sleep 2
 		printf "\n"
-		echo -e "${GREEN}¡Listo! ya verás más eficiente a tu WebServer{STD}"
+		echo -e "${GREEN}¡Listo! ya verás más eficiente a tu WebServer${STD}"
 		printf "\n"
 
         pause
@@ -538,18 +597,18 @@ ocho(){
 		echo "¡Vamos a purgar la QUEUE de emails de este servidor!"
 		printf "\n"
 		sleep 2
-		echo -e "${GREEN}Posee la siguiente cantidad de emails:${STD} $(exim -bpc)"
+		echo -e "${GREEN}Actualmente posee la siguiente cantidad de emails:${STD} $(exim -bpc)"
 		printf "\n"
 		sleep 3
 		#eliminamos todo la queue1|
-		echo "Ok, los estoy limpiando de la QUEUE..."
+		echo "Bien, a esos email los estoy limpiando de la QUEUE..."
 		sleep 2
 		cd /var/spool/exim/input
 		yes|rm -r * > /dev/null 2>&1
 		sleep 3
 		printf "\n"
 		#reiniciamos exim y dovecot
-		echo "ahora reiniciaremos los servicios de emails.."
+		echo "hecho, ahora reiniciaremos los servicios de exim y dovecot"
 		printf "\n"
 		service exim restart
 		service dovecot
@@ -615,21 +674,28 @@ diez(){
 }
 
 once(){
-		printf "\n"
-		printf "\n"
-		echo -e "Inicializando la ${GREEN}MATRIX..${STD} Presiona CTRL + C para salir luego al MENU"
-		printf "\n"
-		sleep 4
-		#Matrix
-		Matrix=$(echo -e "\e[1;40m" ; clear ; while :; do echo $LINES $COLUMNS $(( $RANDOM % $COLUMNS)) $(( $RANDOM % 72 )) ;sleep 0.05; done|awk '{ letters="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()"; c=$4; letter=substr(letters,c,1);a[$3]=0;for (x in a) {o=a[x];a[x]=a[x]+1; printf "\033[%s;%sH\033[2;32m%s",o,x,letter; printf "\033[%s;%sH\033[1;37m%s\033[0;0H",a[x],x,letter;if (a[x] >= $1) { a[x]=0; } }}')
-		echo $Matrix
+
+		#validamos todos los servicios del servidor
+		chkconfig --list | awk '{ print $1 }' | cut -f1 | grep -v : | sort > serviciosdelservidor.txt
+
+		cat serviciosdelservidor.txt |  while read output
+		do
+		   if ps ax | grep -v grep | grep "$output" > /dev/null
+
+		   then
+		  echo "¡Genial! el servicio $output está operando de forma normal"
+
+		  else
+		  echo "¡Ups! el servicio $output parece no responder, validarlo de ser necesario.."
+		  
+		fi
+
+		done
+
 		pause
 }
-doce(){
+doce(){	
 
-        pause
-}
-trece(){
 		printf "\n"
 		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
 		printf "\n"
@@ -644,30 +710,108 @@ trece(){
 		./build rewrite_confs
 		sleep 3
 		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO{STD}"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
 		printf "\n"
+
+		pause
+}
+trece(){
+
+		printf "\n"
+		echo -e "${GREEN}¡Genial! estabilzaremos la carga de este servidor${STD}"
+			#validamos todos los servicios del servidor
+		chkconfig --list | awk '{ print $1 }' | cut -f1 | grep -v : | sort > serviciosdelservidor.txt
+
+		cat serviciosdelservidor.txt |  while read output
+		do
+		   if ps ax | grep -v grep | grep "$output" > /dev/null
+
+		   then
+		   	service $output restart
+		  echo "¡Genial! el servicio $output está operando de forma normal"
+
+		  else
+		  	service $output restart
+		  echo "¡Ups! el servicio $output parece no responder, validarlo de ser necesario.."
+		  
+		fi
+
+		done
 
 		pause
 }
 catorce(){
+
 		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		echo -e "${GREEN}¡Bien! Investiguemos para hacer IMAPSync del DOMINIO que me indiques a continuación..${STD}"
+		printf "\n"
+		read -p "DOMINIO: " dominioorigen1;
+		printf "\n"
+		#obtenemos el MX del dominio indicado
+		mxdominioorigen1=$(nslookup -query=mx  $dominioorigen1 | awk '{print $6, $5 }' | head -9 | sort -n)
+		#obtenemos el registro IMAP del dominio del dominio indicado
+		ipdeimapdominioorigen1=$(nslookup -query=a imap.$dominioorigen1 | tail -2 | cut -d: -f2)
+		ipdemaildominioorigen1=$(nslookup -query=a mail.$dominioorigen1 | tail -2 | cut -d: -f2)
+		sleep 2
+		echo -e "El dominio ${GREEN}$dominioorigen1${STD} posee"
+		echo -e	"1) ${GREEN}IP de IMAP.$dominioorigen1:${STD}$ipdeimapdominioorigen1"
+		echo -e	"2) ${GREEN}IP de MAIL.$dominioorigen1:${STD}$ipdemaildominioorigen1"
+   read -p "3) IP MANUAL: " ipmanualdeldominioorigen1;
+		printf "\n"
+		sleep 2
+		cuentachuser=$(/usr/local/bin/c4cd $dominioorigen1 | grep nfsweb | cut -d/ -f3)
+		echo -e "La cuenta en CloudPanel es ${GREEN}$cuentachuser${STD} y posee las siguientes emails:"
+		
+		printf "\n"
+        read -p "IMAP Host: " HOST1;
+        read -p "E-mail: " EMAIL1;
+        read -p "Password: " PASS1;
+
+		#read -p "DOMINIO: " dominioorigen1;
+		printf "\n"
+		echo -e "Estoy aplicando la configuración para el Sistema Operativo..."
+		#actualizamos el timezone manualente
+		#if [[ $mxdominioorigen1 == "2" &&  $SO == *".elserver.com"* ]] ; then
+		#guardamos la hora actual
+
+		
+		sleep 2
+		echo -e "Estoy aplicando la configuración para el Sistema Operativo..."
+		#actualizamos el timezone manualente
+		
+		
+		
+		#instalamos el Network Time Protocol
+		sleep 2
+		printf "\n"
+		printf "\n"
+		echo -e "Listo, ahora instalaremos NTP (Network Time Protocol).."
+		sleep 2
+		printf "\n"
+		printf "\n"
+	
 		printf "\n"
 		printf "\n"
 		sleep 2
-		echo -e "Aplicando la configuración de ModUserDIR..."
-		sleep 2
+		echo -e "Bien, luego actualiza el TimeZone en PHP de ser necesario.."
 		printf "\n"
-		printf "\n"
-		cd /usr/local/directadmin/custombuild
-		./build set userdir_access yes
-		./build rewrite_confs
-		sleep 3
-		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO{STD}"
 		printf "\n"
 
+		#/usr/local/php*/lib/php.ini
+		sleep 2
+		printf "\n"
+		echo -e "${GREEN}¡Bien! verifica en estos momentos la hora del servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		echo -e "Anterior FECHA Y HORA: $horaanterior"
+		printf "\n"
+		echo -e "Nueva FECHA Y HORA: $(date)"
+		printf "\n"
+		sleep 2
+	
+
 		pause
+
 }
 quince(){
 		printf "\n"
@@ -684,7 +828,7 @@ quince(){
 		./build rewrite_confs
 		sleep 3
 		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO{STD}"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
 		printf "\n"
 
 		pause
@@ -704,7 +848,136 @@ dieciseis(){
 		./build rewrite_confs
 		sleep 3
 		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO{STD}"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
+		printf "\n"
+
+		pause
+}
+diecisiete(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
+		printf "\n"
+
+		pause
+}
+dieciocho(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
+		printf "\n"
+
+		pause
+}
+diecinueve(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
+		printf "\n"
+
+		pause
+}
+veinte(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
+		printf "\n"
+
+		pause
+}
+veintiuno(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
+		printf "\n"
+
+		pause
+}
+veintidos(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+				echo -e "\e[1;40m" ; clear ; while :; do echo $LINES $COLUMNS $(( $RANDOM % $COLUMNS)) $(( $RANDOM % 72 )) ;sleep 0.05; done|awk '{ letters="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()"; c=$4; letter=substr(letters,c,1);a[$3]=0;for (x in a) {o=a[x];a[x]=a[x]+1; printf "\033[%s;%sH\033[2;32m%s",o,x,letter; printf "\033[%s;%sH\033[1;37m%s\033[0;0H",a[x],x,letter;if (a[x] >= $1) { a[x]=0; } }}'
+		pause
+}
+PROXIMO(){
+		printf "\n"
+		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "Aplicando la configuración de ModUserDIR..."
+		sleep 2
+		printf "\n"
+		printf "\n"
+		cd /usr/local/directadmin/custombuild
+		./build set userdir_access yes
+		./build rewrite_confs
+		sleep 3
+		printf "\n"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
 		printf "\n"
 
 		pause
@@ -715,29 +988,31 @@ show_menus() {
 	clear
 
 	echo -e "${GREEN}==============================================================================================${STD}"
-    echo -e " ${GREEN} - .: MENU PRINCIPAL DE LA APLICACION :. - .:SERVER.OK:. for Linux with DirectAdmin & CPanel ${STD} "
+    echo -e " ${GREEN}|| MENU PRINCIPAL || .:SERVER.OK:. by DANIEL BUSTAMANTE for Linux with DirectAdmin & CPanel ${STD} "
 	echo -e "${GREEN}==============================================================================================${STD}"
 	echo "0) Salir de la aplicacion"
 	echo "1) Informacion del servidor"
-	echo "2) Ping a las IP del servidor"
+	echo "2) Ping a las IP del servidor y Validar RBL"
 	echo "3) Hacer espacio en disco del servidor"
 	echo "4) Detener spammers y limpiar QUEUE de emails"
 	echo "5) Habilitar let's encryt"
-	echo "6) (CVE-2019-14287) Actualizar los RPM y SUDO"
+	echo "6) Setear FECHA/HORA a Argentina UTC -3"
 	echo "7) NGINX como proxy reverso (DirectAdmin)"
 	echo "8) Purgar QUEUE entera de Emails"
-	echo "9) Instalar CSF / WAF / Firewall."
+	echo "9) Instalar CSF / WAF / Firewall"
 	echo "10) Analizar MY.CNF del SQL"
-	echo "11) NADA POR AHORA."
+	echo "11) Ver Status de todos los servicios"
 	echo "12) Permitir links temporales mediante /~ (DirectAdmin)"
-	echo "13) NADA POR AHORA."
-	echo "14) NADA POR AHORA."
-	echo "15) NADA POR AHORA."
-	echo "16) NADA POR AHORA."
-	echo "17) NADA POR AHORA."
-	echo "18) NADA POR AHORA."
+	echo "13) Estabilizar Servidor Completo"
+	echo "14) IMAPSync de Google a CloudPanel"
+	echo "15) IMAPSync del dominio completo a Cpanel"
+	echo "16) IMAPSync del dominio completo a DirectAdmin"
+	echo "17) IMAPSync del dominio completo a Plesk"
+	echo "18) IMAPSync de una cuenta individual"
 	echo "19) NADA POR AHORA."
 	echo "20) NADA POR AHORA."
+	echo "21) NADA POR AHORA."
+	echo "22) Matrix."
 	printf "\n"
 	echo -e "${GREEN}----------------------------------------------------------------------------------------------${STD}"
 	printf "\n"
@@ -773,6 +1048,8 @@ read_options(){
 		18) dieciocho;;
 		19) diecinueve;;
 		20) veinte;;
+		21) veintiuno;;
+		22) veintidos;;
 		*) echo -e "${RED}¡UPS! Presionaste una tecla erronea, [ESPERA] y vuelve a elegir...${STD}" && sleep 2
 	esac
 }
