@@ -7,6 +7,7 @@
     then 
 	    RedHat=$(cat /etc/redhat-release)
 	    SO=$RedHat
+	    DLX=
     else 
 	    Debian=$(lsb_release -a)
 	    SO=$Debian
@@ -22,6 +23,24 @@
 		PANEL=$"WHM $WHM"
 		PANELS=2
 	fi
+
+#identificamos el MotherBoard
+	MTHBD=$(dmidecode | grep -A3 '^System Information' | grep Manufacturer)
+
+#Identificamos el CPU
+	if dmidecode | grep CPU | grep Version | cut -d: -f2 > /dev/null 2>&1
+	then
+	CPU=$(cat /proc/cpuinfo | grep 'CPU' | head -1 | cut -d: -f2)
+	else
+	CPU=$(dmidecode | grep CPU | grep Version | cut -d: -f2)
+	fi
+
+#Identificamos la RAM
+	RAM=$(cat /proc/meminfo | grep MemTotal | awk '{ print $2 }' | while read KB dummy;do echo $((KB/1024))MB;done)
+
+#Identificamos el disco DISCO
+    HD=$(fdisk -l | grep Disk | grep /dev | cut -d, -f1)
+
 #validamos el RDNS
 	RDNS=$(getent hosts $HOSTNAME | awk '{ print $1 ; exit }')
 #validamos el PTR
@@ -59,12 +78,51 @@
 	else
 		PANELversion=$(/usr/local/cpanel/cpanel -V | awk {'print $1'})
 	fi
+#informamos el webserver
+	if [[ $PANELS == "1" ]] ; then
+		VersionWebSrv=$(cat /usr/local/directadmin/custombuild/options.conf | grep webserver | cut -d= -f2)
+	fi
 
 #informamos la version de exim
 	VersionEXIM=$(exim -bV | awk {'print $3 ; exit'})
 
 #informamos los puertos smtp
-  	PuertosSMTP=$(cat /etc/exim.conf | grep daemon_smtp_ports |cut -d= -f2 | head -1)
+	if [[ $DA == *"2.0"* ]]; then
+
+		if cat /etc/exim.conf | grep daemon_smtp_ports |cut -d= -f2 | head -1 > /dev/null 2>&1; then
+
+		PuertosSMTP=$(cat /etc/exim.conf | grep daemon_smtp_ports |cut -d= -f2 | head -1)
+
+		else
+		
+		PuertosSMTP=$(cat /etc/exim.variables.conf | grep daemon_smtp_ports |cut -d= -f2 | head -1)
+	
+		fi
+  	fi
+
+#informamos IP SMTP
+	if cat /etc/virtual/domainips > /dev/null 2>&1; then
+	IPdelSMTP=$(cat /etc/virtual/domainips | cut -d# -f1)
+	else
+	IPdelSMTP=$(cat /etc/virtual/domainips | cut -d# -f1)
+    fi
+	
+#informamos si spamassasins esta habilitado
+	if [[ $PANELS == "1" ]] ; then
+
+		if /usr/bin/spamassassin -V > /dev/null 2>&1; then
+		Spamassasinsstatus=Habilitado
+		else
+		Spamassasinsstatus=Deshabilitado
+		fi
+	else
+		if /usr/local/cpanel/3rdparty/perl/528/bin/spamassassin -V | head -1 | awk {' print  $3 '} > /dev/null 2>&1; then
+		Spamassasinsstatus=Habilitado
+		else
+		Spamassasinsstatus=Deshabilitado
+		fi
+	fi
+	
 
 #informamos versiones y modos de php
 	if [[ $PANELS == "1" ]] ; then
@@ -104,7 +162,7 @@
 
 #informamos el top 5 de las cuentas con más envios realizados
 	if [[ $PANELS == "1" ]] ; then
-		topemisores=$(exim -bpc)
+		topemisores=$(cat /var/log/directadmin/system.log* | grep sent | sort -n | cut -d: -f7 | head -5)
 	else
 		topemisores=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | head -5)
 	fi
@@ -139,18 +197,22 @@ pause(){
 }
 
 uno(){
-	echo -e "${GREEN}Hostname:${STD} $HOSTNAME 
-${GREEN}Reverso de Hostname:${STD} $RDNS 
-${GREEN}PTR de IP:${STD} $PTR
+	clear
+	printf "\n"
+	echo -e "
+${GREEN}CPU:${STD} $CPU ${GREEN}RAM:${STD} $RAM 
+${GREEN}DISCO:${STD} $HD 
+${GREEN}MOTHERBOARD:${STD} $MTHBD
+${GREEN}Hostname:${STD} $HOSTNAME ${GREEN}RDNS:${STD} $RDNS ${GREEN}PTR:${STD} $PTR
 ${GREEN}Sistema Operativo:${STD} $SO 
 ${GREEN}Panel de Control:${STD} $PANEL ${GREEN}Version de Panel:${STD} $PANELversion
-${GREEN}Let's Encryt:${STD} $letsencrytstatus ${GREEN}ModUserDIR /~:${STD} $ModUserDirstatus
+${GREEN}Let's Encryt:${STD} $letsencrytstatus ${GREEN}ModUserDIR /~:${STD} $ModUserDirstatus ${GREEN}SpamaAsassins:${STD} $Spamassasinsstatus
 ${GREEN}Carga actual:${STD} $Carga ${GREEN}Carga hace 15 minutos:${STD} $Carga15
 ${GREEN}Fecha:${STD} $Fecha ${GREEN}Hora:${STD} $Hora
-${GREEN}Apache:${STD} $VersionAPACHE
-${GREEN}MySQL:${STD} $VersionMYSQL
+${GREEN}Apache:${STD} $VersionAPACHE ${GREEN}WebServer:${STD} $VersionWebSrv ${GREEN}MySQL:${STD} $VersionMYSQL
 ${GREEN}CSF:${STD} $(csf -V | cut -d: -f2)
-${GREEN}Exim:${STD} $VersionEXIM ${GREEN}Puertos SMTP:${STD} $PuertosSMTP ${GREEN}Correos en cola:${STD} $(exim -bpc)
+${GREEN}Exim:${STD} $VersionEXIM ${GREEN}Puertos SMTP:${STD} $PuertosSMTP
+${GREEN}Correos en cola:${STD} $(exim -bpc) ${GREEN}IP SMTP:${STD} $IPdelSMTP
 ${GREEN}Top 5 emisores:${STD}
 $topemisores
 ${GREEN}Versiones de PHP:${STD}
@@ -210,8 +272,13 @@ dos(){
 tres(){
 
 #Matamos procesos de backup (compresión y tareas del panel) en DirectAdmin y WHM
-
 killall -9 gzip > /dev/null 2>&1 ; killall -9 tar > /dev/null 2>&1 ; killall -9 dataskq > /dev/null 2>&1 ; killall -9 cpbackup > /dev/null 2>&1 ; killall -9 pkgacct  > /dev/null 2>&1; killall -9 gunzip2  > /dev/null 2>&1 ; killall -9 pig z > /dev/null 2>&1
+
+#Matamos procesos de ClamScan (antivirus)
+/etc/init.d/clamd stop > /dev/null 2>&1 ; killall /usr/bin/clamscan > /dev/null 2>&1 ; killall clamd -9  > /dev/null 2>&1
+
+#
+
 
 #DISCO: Verificamos el espacio en disco del servidor
 		printf "\n"
@@ -236,7 +303,7 @@ killall -9 gzip > /dev/null 2>&1 ; killall -9 tar > /dev/null 2>&1 ; killall -9 
 		 read -r -p "Indica si deseas liberar o no espacio en este servidor [SI/NO] " input
 		 
 		 case $input in
-		     [sS][iI][si]|[SI])
+		     s|si|S|SI)
 
 		 echo "¡Genial! vamos a liberar espacio en este equipo"
 		 #DISCO: Borramos  tar.gz, .tar, .tar.bz2, .bz2, .tar.gzip, .tgz, .gz, .rar, .zip
@@ -275,7 +342,7 @@ killall -9 gzip > /dev/null 2>&1 ; killall -9 tar > /dev/null 2>&1 ; killall -9 
 							sleep 5 ; pause
 		 		;;
 
-		     [nN][no]|[NO])
+		     n|no|N|NO)
 		printf "\n"
 		 echo "OK, no se realizará limpieza ni optimización del disco" ; pause
 
@@ -350,6 +417,7 @@ cuatro(){
 
 		sleep 4
 
+		#Si el panel es WHM con CloudLinux
 		if [[ $PANELS == "2" &&  $SO == *"Cloud"* ]] ; then
 
 		#identificamos la cuenta de email con mayores envios
@@ -360,15 +428,14 @@ cuatro(){
 		dominiospammer=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | awk {'print $2'} | head -1 | cut -d@ -f2)
 		#identificamos el usuario propietario de ese dominio
 		usuariospammer=$(/scripts/whoowns $dominiospammer)
-		
 
 		echo -e "La cuenta ${RED}$emailspammer${STD} realizó ${RED}$enviosdelspammer${STD} envios.."
 		#while true
 		#do
-		  read -r -p "¿Deseas suspender sus envios si los considera abusivos? [SI/NO] " input
+		  read -r -p "¿Deseas suspender sus envios si los considera abusivos? [s/n] " input
 
 		  case $input in
-		      [sS][si][SI]|[iI])
+		      s|si|S|SI)
 		      
 				#deshabilitamos los envios de ese usuario para CloudLinux
 				/usr/local/cpanel/bin/whmapi1 suspend_outgoing_email user=$usuariospammer
@@ -386,17 +453,19 @@ cuatro(){
 				printf "\n"
 				printf "\n"
 		      ;;
-		      [nN][oO]|[nN])
+		      n|no|N|NO)
 		      echo "No"
-		            ;;
+		      ;;
 		      *)
-		    echo "Invalid input..."
-		    ;;
+		    echo "Mmmm.. tómate un café, elegiste una opción incorrecta"
+		      ;;
 		  esac
 		#done
 
-
-		else
+		fi
+		
+		#Si el panel es WHM solo
+		if [[ $PANELS == "2" ]] ; then
 
 		#identificamos la cuenta de email con mayores envios
 		emailspammer=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | awk {'print $2'} | head -1)
@@ -413,7 +482,7 @@ cuatro(){
 		 read -r -p "¿Deseas suspender sus envios si los considera abusivos? [SI/NO] " input
 
 		  case $input in
-		      [sS][si][SI]|[iI])
+		      s|si|S|SI)
 		      
 				#deshabilitamos los envios de ese usuario para CloudLinux
 				whmapi1 suspend_outgoing_email user=$usuariospammer
@@ -432,15 +501,71 @@ cuatro(){
 				printf "\n"
 
 		      ;;
-		      [nN][oO]|[nN])
+		      n|no|N|NO)
 		      echo "No"
-		            ;;
+		      ;;
 		      *)
-		    echo "Invalid input..."
-		    ;;
+		    echo "Mmmm.. tómate un café, elegiste una opción incorrecta"
+		      ;;
 		  esac
 		#done
 
+		#Si el panel es DirectAdmin
+		else
+		echo "Tines un DirectAdmin y esta sección está en desarrollo..."
+		fi
+
+		if [[ $PANELS == "1" &&  $Spamassasinsstatus == *"Deshabilitado"* ]] ; then
+
+			read -r -p "SpamAssasins está deshabilitado ¿Deseas instalarlo en este servidor? [s/n] " input
+
+		  case $input in
+		        s|si|S|SI)
+				printf "\n"
+				echo -e "Bien, instalaremos el ${GREEN}SpamaAsassin${STD} en este servidor.."
+				printf "\n"
+
+				#descargando paquetes de spamassasins
+				yum -y install perl-ExtUtils-MakeMaker perl-Digest-SHA perl-Net-DNS perl-NetAddr-IP perl-Archive-Tar perl-IO-Zlib perl-Digest-SHA perl-Mail-SPF \
+				perl-IO-Socket-INET6 perl-IO-Socket-SSL perl-Mail-DKIM perl-DBI perl-Encode-Detect perl-HTML-Parser \
+				perl-HTML-Tagset perl-Time-HiRes perl-libwww-perl perl-Sys-Syslog perl-DB_File perl-Razor-Agent pyzor
+
+				#instalación por custombuild
+				cd /usr/local/directadmin/custombuild ; ./build set spamd spamassassin ; ./build spamassassin ; service exim start
+				printf "\n"
+				echo -e "la intalación esta ${GREEN}completada${STD} ahora validemos si el servicio spamd esta ejecutándose.."
+				printf "\n"
+				ps ax |grep spamd
+				printf "\n"
+				echo -e "${GREEN}¡Listo!${STD} SpamaAsassin está activo"
+				printf "\n"
+				printf "\n"
+
+				#Actualizamos para saber si spamassasins esta habilitado
+				if [[ $PANELS == "1" ]] ; then
+
+					if /usr/bin/spamassassin -V > /dev/null 2>&1; then
+					Spamassasinsstatus=Habilitado
+					else
+					Spamassasinsstatus=Deshabilitado
+					fi
+				else
+					if /usr/local/cpanel/3rdparty/perl/528/bin/spamassassin -V | head -1 | awk {' print  $3 '} > /dev/null 2>&1; then
+					Spamassasinsstatus=Habilitado
+					else
+					Spamassasinsstatus=Deshabilitado
+					fi
+				fi
+				printf "\n"
+		      ;;
+		       n|no|N|NO)
+		      echo -e "Okey, NO instalaremos el ${GREEN}SpamaAsassin${STD} en este servidor"
+		      ;;
+		      *)
+		    echo "Mmmm.. tómate un café, elegiste una opción incorrecta"
+		      ;;
+		  esac
+				
 		fi
         pause
 }
@@ -472,10 +597,14 @@ cinco(){
 			cd /usr/local/directadmin/custombuild
 			./build update
 			./build rewrite_confs
+			./build update
+			./build letsencrypt
 			printf "\n"
 			echo -e "${GREEN}¡Genial! Let's Encryt quedo instalado y listo para usarse${STD}"
 			printf "\n"
 			printf "\n"
+
+			
 		else
 		#instalaremos Let's Encrytp en WHM
 			/scripts/install_lets_encrypt_autossl_provider
@@ -484,7 +613,7 @@ cinco(){
 			printf "\n"
 			printf "\n"
 
-	        pause
+	        
     	fi
 
 	    	#actualizaremos el status de si let's encryt esta habilitado
@@ -514,6 +643,8 @@ cinco(){
 			fi
 		fi
 		fi
+
+		pause
 
 		}
 
@@ -569,25 +700,51 @@ seis(){
 
 siete(){
 
-		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos NGINX + Apache como WebServer en este servidor:${STD}"
-		printf "\n"
-		printf "\n"
-		sleep 2
-		echo -e "Aplicando la configuración necesaria..."
-		sleep 2
-		printf "\n"
-		printf "\n"
-		cd /usr/local/directadmin/custombuild
-		./build update
-		./build set webserver nginx_apache
-		./build nginx_apache
-		./build php n
-		./build rewrite_confs
-		sleep 2
-		printf "\n"
-		echo -e "${GREEN}¡Listo! ya verás más eficiente a tu WebServer${STD}"
-		printf "\n"
+		 read -r -p "¿Deseas habilitar NGINX+APACHE [1] ó APACHE [2] como WebServer? [1/2] " input
+
+		  case $input in
+		      1)
+				printf "\n"
+				echo -e "${GREEN}¡Genial! habilitemos NGINX + APACHE como WebServer en este servidor:${STD}"
+				printf "\n"
+				printf "\n"
+				sleep 2
+				echo -e "Aplicando la configuración necesaria..."
+				sleep 2
+				printf "\n"
+				printf "\n"
+				cd /usr/local/directadmin/custombuild ; ./build update ; ./build set webserver nginx_apache ; ./build nginx_apache ; ./build php y ; ./build rewrite_confs
+				sleep 2
+				printf "\n"
+				echo -e "${GREEN}¡Listo! se instaló NGINX + APACHE como tu WebServer${STD}"
+				printf "\n"
+
+		      ;;
+		      2)
+
+		     	printf "\n"
+				echo -e "${GREEN}¡Genial! habilitemos APACHE como WebServer en este servidor:${STD}"
+				printf "\n"
+				printf "\n"
+				sleep 2
+				echo -e "Aplicando la configuración necesaria..."
+				sleep 2
+				printf "\n"
+				printf "\n"
+				cd /usr/local/directadmin/custombuild ; ./build update  ; ./build set webserver apache  ; ./build apache  ; ./build php y ; ./build rewrite_confs
+				sleep 2
+				printf "\n"
+				echo -e "${GREEN}¡Listo! se instaló APACHE como tu WebServer${STD}"
+				printf "\n"
+
+		      ;;
+		      *)
+			printf "\n"
+		    echo "Mmmm.. tómate un ${GREEN}café${STD}, elegiste una opción incorrecta"
+		    printf "\n"
+		      ;;
+		  esac
+		#done
 
         pause
 }
@@ -650,47 +807,282 @@ nueve(){
 }
 
 diez(){
+		printf "\n"
+		read -r -p "¿Deseas analizar y reparar todas las bases de datos del servidor? [SI/NO] " input
+		printf "\n"
+		printf "\n"
+		case $input in
+		     s|si|S|SI)
 
+				 echo "¡Genial! vamos a analizar / reparar todas las bases de datos de este equipo.."
+				 sleep 2
+				 printf "\n"
+				 printf "\n"
+
+		 		#Obtenemos la contraseña del mysql del directadmin y lo guardamos en $passdaadmin
+				 if [[ $PANELS == "1" ]] ; then
+					passdaadmin=$(cat /usr/local/directadmin/conf/mysql.conf | grep -v user | cut -d= -f2)
+
+					mysqlcheck -u da_admin -p$passdaadmin --auto-repair --check --all-databases
+
+					printf "\n"
+					echo -e "${GREEN}¡Listo!${STD} se optimizaron / repararon las ${GREEN}bases de datos${STD} del servidor"
+					printf "\n"
+					printf "\n"
+					pause 2
+
+					read -r -p "¿Deseas optimizar el my.cnf de este servidor DirectAdmin? [s/n] " inputmycnf
+
+					  case $inputmycnf in
+					        s|si|S|SI)
+							printf "\n"
+							echo -e "Bien, aplicamos ${GREEN}my-huge.cnf${STD} en este servidor.."
+							printf "\n"
+
+							#descargando paquetes de spamassasins
+							service mysqld stop ; mv /etc/my.cnf /etc/my.cnf.last_bkp ; cp -f /usr/share/mysql/my-huge.cnf /etc/my.cnf ; service mysqld start ; service mysqld status
+							printf "\n"
+							echo -e "${GREEN}¡Genial!${STD} MySQL está mejorado"
+							printf "\n"
+							printf "\n"
+					      ;;
+					       n|no|N|NO)
+					      echo -e "Okey, NO aplicaremos ${GREEN}my-huge.cnf${STD} en este servidor"
+					      ;;
+					      *)
+					    echo "Mmmm.. tómate un café, elegiste una opción incorrecta"
+					      ;;
+					  esac
+
+			    else
+
+					if [[ $PANELS == "2" ]] ; then
+			
+						mysqlcheck --auto-repair --check  --compress --extended --verbose --all-databases
+
+						printf "\n"
+						echo -e "${GREEN}¡Listo!${STD} se optimizaron / repararon las ${GREEN}bases de datos${STD} del servidor"
+						printf "\n"
+
+					fi
+				fi	
+		 		;;
+
+		     n|no|N|NO)
 		printf "\n"
-		echo -e "${GREEN}¡Genial! analizaremos el /etc/my.cnf/ de este servidor${STD}"
+		printf "\n"
+
+		echo "OK, no se realizará ningún optimización de las bases de datos" ; pause
+
+		        ;;
+		     *)
 		printf "\n"
 		printf "\n"
+		 echo "Mmmm.. tómate un café, elegiste una opción incorrecta"
+		 ;;
+		 esac
+		#done
+
 		sleep 2
-		echo -e "Ok, comencemos el análisis..."
-		sleep 2
+		printf "\n"
+		read -r -p "¿Deseas analizar el my.cnf con MySQLTuner? [SI/NO] " inputmycnfopt
 		printf "\n"
 		printf "\n"
-		cd /
-		wget https://github.com/major/MySQLTuner-perl/archive/master.zip
-		unzip master.zip
-		cd MySQLTuner-perl-master
-		./mysqltuner.pl
-		sleep 4
-		printf "\n"
-		echo -e "${GREEN}¡Listo!${STD} revisa en el diagnóstico de lo que se pueda ${GREEN}Optimizar${STD}"
-		printf "\n"
+		case $inputmycnfopt in
+		     s|si|S|SI)
+				
+				printf "\n"
+				echo -e "${GREEN}¡Genial! analizaremos el /etc/my.cnf/ de este servidor${STD}"
+				printf "\n"
+				printf "\n"
+				sleep 2
+				echo -e "Ok, comencemos el análisis..."
+				sleep 2
+				printf "\n"
+				printf "\n"
+				cd /
+
+				#Verificamos si existe el archivo "mysqltuner.pl"
+				#Ejemplo NEGATIVO: test ! -f /etc/resolv.conf && echo "El archivo /etc/resolv.conf NO existe." || echo "El archivo /etc/resolv.conf SI existe."
+				#Ejemplor POSITIVO: test -f /usr/bin/imapsync  && echo "El archivo imapsync SI existe" || echo "l archivo imapsync NO existe"
+
+				if test -f /MySQLTuner-perl-master/mysqltuner.pl ; then
+					cd MySQLTuner-perl-master
+					./mysqltuner.pl
+					sleep 4
+					else
+					cd /
+					wget https://github.com/major/MySQLTuner-perl/archive/master.zip
+					unzip master.zip
+					cd MySQLTuner-perl-master
+					./mysqltuner.pl
+					sleep 4
+				fi
+				printf "\n"
+				echo -e "${GREEN}¡Listo!${STD} revisa en el diagnóstico de lo que se pueda ${GREEN}Optimizar${STD}"
+				printf "\n"
+				sleep 2
+			;;
+		     n|no|N|NO)
+
+				printf "\n"
+				echo "OK, no se realizará ningún analisis del my.cnf"
+				printf "\n"
+
+		     ;;
+		     *)
+			 printf "\n"
+			 echo "Mmmm.. tómate un café, elegiste una opción incorrecta"
+			 printf "\n"
+		 ;;
+		 esac
 
         pause
 }
 
 once(){
+		    printf "\n"
+		    echo -e "Primero validaremos si ${GREEN}IMAPSync${STD} está instalado en este servidor"
+		    printf "\n"
+		     #testear si imapsync está instalado en el equipo, sino instalarlo...
+			if test -f /usr/bin/imapsync ; 
+				then
+				printf "\n"
+				echo "IMAPSync no está instalado, procederé a instalarlo..."
+				sleep 2
+				printf "\n"
+				yum install --enablerepo=extras epel-release ; yum install imapsync -y ; clear
+				clear
+				else
+				statusimapsync=INSTALADO
+				clear
+			fi
 
-		#validamos todos los servicios del servidor
-		chkconfig --list | awk '{ print $1 }' | cut -f1 | grep -v : | sort > serviciosdelservidor.txt
+		    printf "\n"
+		    printf "\n"
+		    echo -e "${GREEN}¡Bien! Indicame el DOMINIO que vamos a realizarle IMAPSync..${STD}"
+		    printf "\n"
+		    read -p "DOMINIO: " dominioorigen1;
+		    printf "\n"
 
-		cat serviciosdelservidor.txt |  while read output
-		do
-		   if ps ax | grep -v grep | grep "$output" > /dev/null
+		    #obtenemos el MX del dominio indicado
+		    mxdominioorigen1=$(nslookup -query=mx  $dominioorigen1 | awk '{print $6, $5 }' | head -9 | sort -n)
+		    #obtenemos el registro IMAP del dominio del dominio indicado
+		    ipdeimapdominioorigen1=$(nslookup -query=a imap.$dominioorigen1 | tail -2 | cut -d: -f2)
+		    ipdemaildominioorigen1=$(nslookup -query=a mail.$dominioorigen1 | tail -2 | cut -d: -f2)
+		    IPS=$(ip addr show scope global | awk '$1 ~ /^inet/ {print $2}' | cut -f1 -d "/" -s | sort)
+		    sleep 2
+		    
+			printf "\n"
+		    echo -e "El dominio ${GREEN}$dominioorigen1${STD} posee los siguientes registros IMAP y MAIL en sus DNS:"
+		    echo -e "${GREEN}IP de IMAP.$dominioorigen1:${STD}$ipdeimapdominioorigen1"
+		    echo -e "${GREEN}IP de MAIL.$dominioorigen1:${STD}$ipdemaildominioorigen1"
+		    echo -e "${GREEN}IP de DE ESTE SERVIDOR:${STD}"
+		    echo "$IPS"
+		    echo -e "IMAPSync: ${GREEN}$statusimapsync${STD}"
 
-		   then
-		  echo "¡Genial! el servicio $output está operando de forma normal"
+		    printf "\n"
+		    printf "\n"
+		    echo -e "INGRESA ${GREEN}ALGUNA IP${STD} desde la cual OBTENDREMOS todos los emails.."
+		    printf "\n"
+		    read -p "A) IP ORIGEN (desde donde se absorberan los emails): " ipmanualdeldominioorigen1;
+		    printf "\n"
+		    printf "\n"
+		    echo -e "INGRESA ${GREEN}ALGUNA IP${STD} a donde ENVIAREMOS todos los emails.."
+		    printf "\n"
+		    read -p "B) IP DESTINO (a donde se migraran los emails): " ipmanualdeldominiodestino1;
 
-		  else
-		  echo "¡Ups! el servicio $output parece no responder, validarlo de ser necesario.."
 		  
-		fi
 
-		done
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}1 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 1 de 10: " EMAIL1;
+		    read -p "Contraseña: " PASS1;
+		    printf "\n"
+
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}2 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 2 de 10: " EMAIL2;
+		    read -p "Contraseña: " PASS2;
+		    printf "\n"
+
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}3 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 3 de 10: " EMAIL3;
+		    read -p "Contraseña: " PASS3;
+		    printf "\n"
+		    
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}4 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 4 de 10: " EMAIL4;
+		    read -p "Contraseña: " PASS4;
+		    printf "\n"
+		    
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}5 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 5 de 10: " EMAIL5;
+		    read -p "Contraseña: " PASS5;
+		    printf "\n"
+		    
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}6 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 6 de 10: " EMAIL6;
+		    read -p "Contraseña: " PASS6;
+		    printf "\n"
+		    
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}7 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 7 de 10: " EMAIL7;
+		    read -p "Contraseña: " PASS7;
+		    printf "\n"
+		    
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}8 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 8 de 10: " EMAIL8;
+		    read -p "Contraseña: " PASS8;
+		    printf "\n"
+		    
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}9 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 9 de 10: " EMAIL9;
+		    read -p "Contraseña: " PASS9;
+		    printf "\n"
+		    
+		    printf "\n"
+			echo -e "Indicame la cuenta de email ${GREEN}10 de 10${STD} a migrar.."
+			printf "\n"
+		    read -p "E-mail 10 de 10: " EMAIL10;
+		    read -p "Contraseña: " PASS10;
+		    printf "\n"
+
+		    printf "\n"
+		    echo -e "${GREEN}¡OK! comencemos a realizarle IMAPSync de las 10 cuentas indicadas..${STD}"
+		    printf "\n"
+
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1;
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2;
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3;
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4;
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5;
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6;
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7;
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8;
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9;
+		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10;
+
+		    printf "\n"
+		    echo -e "${GREEN}¡LISTO!${STD} validemos el log de todo el proceso realizado."
+		    printf "\n"
+
 
 		pause
 }
@@ -720,115 +1112,85 @@ trece(){
 		printf "\n"
 		echo -e "${GREEN}¡Genial! estabilzaremos la carga de este servidor${STD}"
 			#validamos todos los servicios del servidor
-		chkconfig --list | awk '{ print $1 }' | cut -f1 | grep -v : | sort > serviciosdelservidor.txt
 
-		cat serviciosdelservidor.txt |  while read output
-		do
-		   if ps ax | grep -v grep | grep "$output" > /dev/null
+		#cpanel
+		service mysql stop ; service httpd stop ; service exim stop ; cd /scripts/ ; ./restartsrv_apache_php_fpm
 
-		   then
-		   	service $output restart
-		  echo "¡Genial! el servicio $output está operando de forma normal"
+		#directadmin
+		service mysqld stop ; service httpd stop ; service exim stop 
 
-		  else
-		  	service $output restart
-		  echo "¡Ups! el servicio $output parece no responder, validarlo de ser necesario.."
-		  
-		fi
-
-		done
 
 		pause
 }
 catorce(){
+			printf "\n"
+		    printf "\n"
+		    echo -e "${GREEN}¡Bien! Indicame la IP del SERVIDOR ORIGEN del cual vamos a realizarle WGET..${STD}"
+		    printf "\n"
+		    read -p "SERVIDOR (IP ORIGEN): " hostorigen1;
+		    printf "\n"
 
-		printf "\n"
-		echo -e "${GREEN}¡Bien! Investiguemos para hacer IMAPSync del DOMINIO que me indiques a continuación..${STD}"
-		printf "\n"
-		read -p "DOMINIO: " dominioorigen1;
-		printf "\n"
-		#obtenemos el MX del dominio indicado
-		mxdominioorigen1=$(nslookup -query=mx  $dominioorigen1 | awk '{print $6, $5 }' | head -9 | sort -n)
-		#obtenemos el registro IMAP del dominio del dominio indicado
-		ipdeimapdominioorigen1=$(nslookup -query=a imap.$dominioorigen1 | tail -2 | cut -d: -f2)
-		ipdemaildominioorigen1=$(nslookup -query=a mail.$dominioorigen1 | tail -2 | cut -d: -f2)
-		sleep 2
-		echo -e "El dominio ${GREEN}$dominioorigen1${STD} posee"
-		echo -e	"1) ${GREEN}IP de IMAP.$dominioorigen1:${STD}$ipdeimapdominioorigen1"
-		echo -e	"2) ${GREEN}IP de MAIL.$dominioorigen1:${STD}$ipdemaildominioorigen1"
-   read -p "3) IP MANUAL: " ipmanualdeldominioorigen1;
-		printf "\n"
-		sleep 2
-		cuentachuser=$(/usr/local/bin/c4cd $dominioorigen1 | grep nfsweb | cut -d/ -f3)
-		echo -e "La cuenta en CloudPanel es ${GREEN}$cuentachuser${STD} y posee las siguientes emails:"
-		
-		printf "\n"
-        read -p "IMAP Host: " HOST1;
-        read -p "E-mail: " EMAIL1;
-        read -p "Password: " PASS1;
+		    printf "\n"
+		    printf "\n"
+		    echo -e "INGRESA ${GREEN}USUARIO FTP${STD} para conectarnos y OBTENER todos los archivos.."
+		    printf "\n"
+		    read -p "A) USUARIO FTP (para autenticarse en el servidor origen): " usermanualdeldominioorigen1;
+		    printf "\n"
+		    printf "\n"
+		    echo -e "INGRESA ${GREEN}CONTRASEÑA FTP${STD} para autenticarse en el servidor.."
+		    printf "\n"
+		    read -p "B) CONTRASEÑA FTP (para autenticarse en el servidor origen): " passmanualdeldominiodestino1;
+		    printf "\n"
+		    printf "\n"
+		    sleep 2
+		    printf "\n"
+		    echo -e "${GREEN}¡OK! comencemos a realizarle WGET con los datos indicados..${STD}"
+		    printf "\n"
 
-		#read -p "DOMINIO: " dominioorigen1;
-		printf "\n"
-		echo -e "Estoy aplicando la configuración para el Sistema Operativo..."
-		#actualizamos el timezone manualente
-		#if [[ $mxdominioorigen1 == "2" &&  $SO == *".elserver.com"* ]] ; then
-		#guardamos la hora actual
+			wget -m --ftp-user="$usermanualdeldominioorigen1" --ftp-password="$passmanualdeldominiodestino1" ftp://$hostorigen1
 
-		
-		sleep 2
-		echo -e "Estoy aplicando la configuración para el Sistema Operativo..."
-		#actualizamos el timezone manualente
-		
-		
-		
-		#instalamos el Network Time Protocol
-		sleep 2
-		printf "\n"
-		printf "\n"
-		echo -e "Listo, ahora instalaremos NTP (Network Time Protocol).."
-		sleep 2
-		printf "\n"
-		printf "\n"
-	
-		printf "\n"
-		printf "\n"
-		sleep 2
-		echo -e "Bien, luego actualiza el TimeZone en PHP de ser necesario.."
-		printf "\n"
-		printf "\n"
+		    printf "\n"
+		    echo -e "${GREEN}¡LISTO!${STD} validá el log de todo el proceso realizado."
+		    printf "\n"
 
-		#/usr/local/php*/lib/php.ini
-		sleep 2
-		printf "\n"
-		echo -e "${GREEN}¡Bien! verifica en estos momentos la hora del servidor:${STD}"
-		printf "\n"
-		printf "\n"
-		echo -e "Anterior FECHA Y HORA: $horaanterior"
-		printf "\n"
-		echo -e "Nueva FECHA Y HORA: $(date)"
-		printf "\n"
-		sleep 2
-	
 
 		pause
 
 }
 quince(){
 		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		echo -e "${GREEN}¡Bien! habilitemos MALDET y CLAMAV en este servidor:${STD}"
 		printf "\n"
 		printf "\n"
 		sleep 2
-		echo -e "Aplicando la configuración de ModUserDIR..."
-		sleep 2
-		printf "\n"
-		printf "\n"
-		cd /usr/local/directadmin/custombuild
-		./build set userdir_access yes
-		./build rewrite_confs
+		echo -e "Se estará instalando ${GREEN}Linux Malware Detect${STD} a continuación.."
 		sleep 3
 		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
+		#descargar e instalar MALDET
+		cd / ; wget http://www.rfxn.com/downloads/maldetect-current.tar.gz ; tar -xvf maldetect-current.tar.gz ; cd maldetect-* ; ./install.sh
+		printf "\n"
+		printf "\n"
+		sleep 2
+		echo -e "¡Genial! se intaló ${GREEN}Linux Malware Detect${STD} satisfactoriamente, continuemos con ${GREEN}ClamAV Antivirus${STD}.."
+		sleep 3
+		#descargar e unstalar CLAMAV
+		apt install yum
+		yum update && yum install clamav ; maldet -u
+		yum install epel-release ; yum update && yum install clamav ; maldet -u
+		
+		#descargar e unstalar CLAMAV en Debian
+		sudo apt-get update && sudo apt-get upgrade -y ; sudo apt-get install clamav clamav-daemon -y; sudo freshclam
+
+		printf "\n"
+		printf "\n"
+		sleep 4
+		echo -e "¡Genial! se intaló ${GREEN}ClamAV Antivirus${STD} satisfactoriamente"
+		sleep 3
+		#Escanear todos los home y public_html de los usuarios
+		maldet -a /home/?/public_html
+		sleep 3
+		printf "\n"
+		echo -e "¡Listo! ya dispones de mayor${GREEN} Seguridad y Análisis ${STD}en tu Servidor"
 		printf "\n"
 
 		pause
@@ -855,20 +1217,18 @@ dieciseis(){
 }
 diecisiete(){
 		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		echo -e "${GREEN}¡OK! arreglemos este error en este servidor:${STD}"
 		printf "\n"
 		printf "\n"
 		sleep 2
-		echo -e "Aplicando la configuración de ModUserDIR..."
+		echo -e "Aplicando comandos necesarios..."
 		sleep 2
 		printf "\n"
 		printf "\n"
-		cd /usr/local/directadmin/custombuild
-		./build set userdir_access yes
-		./build rewrite_confs
+		service exim stop ; mv /var/spool/exim/db /var/spool/exim/db.bak ; service exim restart
 		sleep 3
 		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
+		echo -e "${GREEN}¡Listo! ya podrás utilizar EXIM de forma normal${STD}"
 		printf "\n"
 
 		pause
@@ -960,7 +1320,6 @@ veintidos(){
 		printf "\n"
 		sleep 2
 				echo -e "\e[1;40m" ; clear ; while :; do echo $LINES $COLUMNS $(( $RANDOM % $COLUMNS)) $(( $RANDOM % 72 )) ;sleep 0.05; done|awk '{ letters="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()"; c=$4; letter=substr(letters,c,1);a[$3]=0;for (x in a) {o=a[x];a[x]=a[x]+1; printf "\033[%s;%sH\033[2;32m%s",o,x,letter; printf "\033[%s;%sH\033[1;37m%s\033[0;0H",a[x],x,letter;if (a[x] >= $1) { a[x]=0; } }}'
-		pause
 }
 PROXIMO(){
 		printf "\n"
@@ -986,36 +1345,35 @@ PROXIMO(){
 # function to display menus
 show_menus() {
 	clear
-
+	printf "\n"
 	echo -e "${GREEN}==============================================================================================${STD}"
-    echo -e " ${GREEN}|| MENU PRINCIPAL || .:SERVER.OK:. by DANIEL BUSTAMANTE for Linux with DirectAdmin & CPanel ${STD} "
+    echo -e " ${GREEN}   MENU PRINCIPAL  .:SERVER.OK:. by DANIEL BUSTAMANTE for Linux with DirectAdmin & CPanel ${STD} "
 	echo -e "${GREEN}==============================================================================================${STD}"
 	echo "0) Salir de la aplicacion"
-	echo "1) Informacion del servidor"
-	echo "2) Ping a las IP del servidor y Validar RBL"
+	echo "1) Informacion y Resumen del servidor"
+	echo "2) Ping a las IP del servidor || Validar RBL"
 	echo "3) Hacer espacio en disco del servidor"
-	echo "4) Detener spammers y limpiar QUEUE de emails"
-	echo "5) Habilitar let's encryt"
+	echo "4) Detener spammers || limpiar QUEUE de emails || Habilitar SpamAsassins"
+	echo "5) Instalar let's encryt"
 	echo "6) Setear FECHA/HORA a Argentina UTC -3"
 	echo "7) NGINX como proxy reverso (DirectAdmin)"
 	echo "8) Purgar QUEUE entera de Emails"
-	echo "9) Instalar CSF / WAF / Firewall"
-	echo "10) Analizar MY.CNF del SQL"
-	echo "11) Ver Status de todos los servicios"
+	echo "9) Instalar CSF Firewall"
+	echo "10) Reparar todas la Bases de Datos || Optimizar my.cnf || Analizar my.cnf del SQL"
+	echo "11) IMAPSync de a 10 cuentas"
 	echo "12) Permitir links temporales mediante /~ (DirectAdmin)"
 	echo "13) Estabilizar Servidor Completo"
-	echo "14) IMAPSync de Google a CloudPanel"
-	echo "15) IMAPSync del dominio completo a Cpanel"
-	echo "16) IMAPSync del dominio completo a DirectAdmin"
-	echo "17) IMAPSync del dominio completo a Plesk"
-	echo "18) IMAPSync de una cuenta individual"
+	echo "14) WGET con autenticación FTP"
+	echo "15) Instalar MALDET y CLAMAV || Ejecutar Antivirus"
+	echo "16) NADA POR AHORA."
+	echo "17) FIX - Berkeley DB error: /var/spool/exim/db/callout en EXIM"
+	echo "18) NADA POR AHORA."
 	echo "19) NADA POR AHORA."
 	echo "20) NADA POR AHORA."
 	echo "21) NADA POR AHORA."
 	echo "22) Matrix."
 	printf "\n"
 	echo -e "${GREEN}----------------------------------------------------------------------------------------------${STD}"
-	printf "\n"
 	printf "\n"
 }
 # read input from the keyboard and take a action
@@ -1050,7 +1408,7 @@ read_options(){
 		20) veinte;;
 		21) veintiuno;;
 		22) veintidos;;
-		*) echo -e "${RED}¡UPS! Presionaste una tecla erronea, [ESPERA] y vuelve a elegir...${STD}" && sleep 2
+		*) echo -e "${RED}¡UPS! Presionaste una tecla erronea, [ESPERA] y vuelve a elegir...${STD}" && sleep 1
 	esac
 }
  
@@ -1059,6 +1417,7 @@ read_options(){
 # ----------------------------------------------
 trap '' SIGINT SIGQUIT SIGTSTP
  
+
 # -----------------------------------
 # Step #4: Main logic - infinite loop
 # ------------------------------------
