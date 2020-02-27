@@ -1121,7 +1121,7 @@ trece(){
 		sleep 2
 
 		printf "\n"
-	    echo -e "$INDICAME EL ${GREEN}ID de CLIENTE${STD} DE DIRECTADMIN"
+	    echo -e "INDICAME EL ${GREEN}ID de CLIENTE${STD} DE DIRECTADMIN"
 	    printf "\n"
 	    read -p "ID Cliente: " idclienteda;
 	    printf "\n"
@@ -1309,6 +1309,10 @@ veinte(){
 
 		#directadmin
 		service mysqld stop ; service httpd stop ; service exim stop 
+		#Eliminar Mensajes del DirectAdmin
+		#Hacer Espacio en Disco
+		#Limpiar Spammer
+
 
 		pause
 }
