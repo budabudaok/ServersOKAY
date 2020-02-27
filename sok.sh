@@ -1121,7 +1121,7 @@ trece(){
 		sleep 2
 
 		printf "\n"
-	    echo -e "$INDICAME EL {GREEN}ID de CLIENTE${STD} DE DIRECTADMIN"
+	    echo -e "$INDICAME EL ${GREEN}ID de CLIENTE${STD} DE DIRECTADMIN"
 	    printf "\n"
 	    read -p "ID Cliente: " idclienteda;
 	    printf "\n"
@@ -1358,7 +1358,7 @@ PROXIMO(){
 }
 
 # function to display menus
-show_menus() {
+mostrar_menu() {
 	clear
 	printf "\n"
 	echo -e "${GREEN}==============================================================================================${STD}"
@@ -1395,7 +1395,7 @@ show_menus() {
 # invoke the one() when the user select 1 from the menu option.
 # invoke the two() when the user select 2 from the menu option.
 # Exit when user the user select 3 form the menu option.
-read_options(){
+leer_opcion(){
 	local choice
 	read -p "SELECCIONA un NUMERO para tu OPCION [ 1 - 20 ]  y luego presiona ENTER: " choice
 	printf "\n"
@@ -1439,6 +1439,6 @@ trap '' SIGINT SIGQUIT SIGTSTP
 while true
 do
  
-	show_menus
-	read_options
+	mostrar_menu
+	leer_opcion
 done
