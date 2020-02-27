@@ -651,22 +651,23 @@ cinco(){
 seis(){
 
 		printf "\n"
-		echo -e "${GREEN}Vamos a setear la zona horaria a UTC-3 para este servidor:${STD}"
+		echo -e "${GREEN}Vamos a setear la zona horaria para este servidor:${STD}"
 		printf "\n"
 		printf "\n"
 		#guardamos la hora actual
 		horaanterior=$(date)
 		sleep 2
-		echo -e "Estoy aplicando la configuración para el Sistema Operativo..."
-		#actualizamos el timezone manualente
-		cp /etc/localtime /root/old.timezone
-		rm /etc/localtime
-		ln -s /usr/share/zoneinfo/America/Argentina/Buenos_Aires /etc/localtime
+		echo -e "${GREEN}Selecciona por el NÚMERO tu continenete, luego tu pais y por último tu región para setear la hora correcta...${STD}"
+		printf "\n"
+		printf "\n"
+		sleep 4
+		#elegir hora
+		tzselect
 		#instalamos el Network Time Protocol
 		sleep 2
 		printf "\n"
 		printf "\n"
-		echo -e "Listo, ahora instalaremos NTP (Network Time Protocol).."
+		echo -e "Listo, ahora instalaremos ${GREEN}NTP (Network Time Protocol)..${STD}"
 		sleep 2
 		printf "\n"
 		printf "\n"
@@ -675,10 +676,11 @@ seis(){
 		#sed -i 's/190.105.235.102/190.183.63.113/g' /etc/ntp.conf
 		/etc/init.d/ntpd start > /dev/null
 		service ntpd start > /dev/null
+		service ntpd restart > /dev/null
 		printf "\n"
 		printf "\n"
 		sleep 2
-		echo -e "Bien, luego actualiza el TimeZone en PHP de ser necesario.."
+		echo -e "Bien,  ${GREEN}actualiza el TimeZone en PHP de ser necesario..${STD}"
 		printf "\n"
 		printf "\n"
 
@@ -691,6 +693,7 @@ seis(){
 		echo -e "Anterior FECHA Y HORA: $horaanterior"
 		printf "\n"
 		echo -e "Nueva FECHA Y HORA: $(date)"
+		printf "\n"
 		printf "\n"
 		sleep 2
 	
@@ -790,18 +793,16 @@ nueve(){
 		sleep 2
 		printf "\n"
 		printf "\n"
-		cd /
-		#wget http://www.configserver.com/free/csf.tgz
-		wget https://download.configserver.com/csf.tgz
-		tar -xzf csf.tgz
-		cd csf
-		sh install.sh
+		cd / ; wget https://download.configserver.com/csf.tgz ; tar -xzf csf.tgz ; cd csf ; sh install.sh
+
+		sed -i 's#^TESTING = "1"#TESTING = "0"#g' /etc/csf/csf.conf ; csf -r ; service lfd restart
 		sleep 3
 		printf "\n"
 		echo -e "${GREEN}¡Listo!${STD} completada la instalación, veamos el ${GREEN}RESULTADO:${STD}"
 		printf "\n"
 		#Next, test whether you have the required iptables modules:
 		perl /usr/local/csf/bin/csftest.pl | grep RESULT
+
 
         pause
 }
@@ -872,7 +873,7 @@ diez(){
 		printf "\n"
 		printf "\n"
 
-		echo "OK, no se realizará ningún optimización de las bases de datos" ; pause
+		echo "OK, no se realizará ningún optimización de las bases de datos" ;
 
 		        ;;
 		     *)
@@ -1355,7 +1356,7 @@ show_menus() {
 	echo "3) Hacer espacio en disco del servidor"
 	echo "4) Detener spammers || limpiar QUEUE de emails || Habilitar SpamAsassins"
 	echo "5) Instalar let's encryt"
-	echo "6) Setear FECHA/HORA a Argentina UTC -3"
+	echo "6) Setear FECHA/HORA  || Habilitar NTPD "
 	echo "7) NGINX como proxy reverso (DirectAdmin)"
 	echo "8) Purgar QUEUE entera de Emails"
 	echo "9) Instalar CSF Firewall"
