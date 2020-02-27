@@ -657,7 +657,7 @@ seis(){
 		#guardamos la hora actual
 		horaanterior=$(date)
 		sleep 2
-		echo -e "${GREEN}Selecciona por el NÚMERO tu continente, luego tu pais y por último tu región para setear la hora correcta...${STD}"
+		echo -e "${GREEN}Selecciona por el NÚMERO tu continenete, luego tu pais y por último tu región para setear la hora correcta...${STD}"
 		printf "\n"
 		printf "\n"
 		sleep 4
@@ -1111,14 +1111,39 @@ doce(){
 trece(){
 
 		printf "\n"
-		echo -e "${GREEN}¡Genial! estabilzaremos la carga de este servidor${STD}"
-			#validamos todos los servicios del servidor
+		echo -e "${GREEN}¡Genial! Renovaremos la Licencia de DirectAdmin en este servidor${STD}"
+		printf "\n"
+		printf "\n"
 
-		#cpanel
-		service mysql stop ; service httpd stop ; service exim stop ; cd /scripts/ ; ./restartsrv_apache_php_fpm
+		if [[ $PANELS == "1" &&  $SO == *"5"* ]] ; then
+			cd /usr/local/directadmin/scripts/ ; echo 1 > /root/.insecure_download
+		fi
+		sleep 2
 
-		#directadmin
-		service mysqld stop ; service httpd stop ; service exim stop 
+		printf "\n"
+	    echo -e "$INDICAME EL {GREEN}ID de CLIENTE${STD} DE DIRECTADMIN"
+	    printf "\n"
+	    read -p "ID Cliente: " idclienteda;
+	    printf "\n"
+
+	    printf "\n"
+	    printf "\n"
+	    echo -e "INDICAME EL ${GREEN}ID de LICENCIA ${STD} DEL SERVIDOR"
+	    printf "\n"
+	    read -p "ID Licencia: " idlicenciada;
+	    printf "\n"
+	    printf "\n"
+
+    	printf "\n"
+	    echo -e "${GREEN}¡OK! comencemos la renovación..${STD}"
+	    printf "\n"
+
+	    ./getLicense.sh $idclienteda $idlicenciada ; service directadmin restart;
+
+	   	printf "\n"
+	    printf "\n"
+	    echo -e "${GREEN}¡LISTO!${STD} valida si puedes accesar al Panel."
+	    printf "\n"
 
 
 		pause
@@ -1276,21 +1301,14 @@ diecinueve(){
 }
 veinte(){
 		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
-		printf "\n"
-		printf "\n"
-		sleep 2
-		echo -e "Aplicando la configuración de ModUserDIR..."
-		sleep 2
-		printf "\n"
-		printf "\n"
-		cd /usr/local/directadmin/custombuild
-		./build set userdir_access yes
-		./build rewrite_confs
-		sleep 3
-		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
-		printf "\n"
+		echo -e "${GREEN}¡Genial! estabilzaremos completamente este servidor${STD}"
+			#validamos todos los servicios del servidor
+
+		#cpanel
+		service mysql stop ; service httpd stop ; service exim stop ; cd /scripts/ ; ./restartsrv_apache_php_fpm
+
+		#directadmin
+		service mysqld stop ; service httpd stop ; service exim stop 
 
 		pause
 }
@@ -1315,11 +1333,7 @@ veintiuno(){
 		pause
 }
 veintidos(){
-		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
-		printf "\n"
-		printf "\n"
-		sleep 2
+
 				echo -e "\e[1;40m" ; clear ; while :; do echo $LINES $COLUMNS $(( $RANDOM % $COLUMNS)) $(( $RANDOM % 72 )) ;sleep 0.05; done|awk '{ letters="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()"; c=$4; letter=substr(letters,c,1);a[$3]=0;for (x in a) {o=a[x];a[x]=a[x]+1; printf "\033[%s;%sH\033[2;32m%s",o,x,letter; printf "\033[%s;%sH\033[1;37m%s\033[0;0H",a[x],x,letter;if (a[x] >= $1) { a[x]=0; } }}'
 }
 PROXIMO(){
@@ -1363,16 +1377,16 @@ show_menus() {
 	echo "10) Reparar todas la Bases de Datos || Optimizar my.cnf || Analizar my.cnf del SQL"
 	echo "11) IMAPSync de a 10 cuentas"
 	echo "12) Permitir links temporales mediante /~ (DirectAdmin)"
-	echo "13) Estabilizar Servidor Completo"
+	echo "13) Actulizar Licencia DirectAdmin"
 	echo "14) WGET con autenticación FTP"
 	echo "15) Instalar MALDET y CLAMAV || Ejecutar Antivirus"
 	echo "16) NADA POR AHORA."
 	echo "17) FIX - Berkeley DB error: /var/spool/exim/db/callout en EXIM"
 	echo "18) NADA POR AHORA."
 	echo "19) NADA POR AHORA."
-	echo "20) NADA POR AHORA."
-	echo "21) NADA POR AHORA."
-	echo "22) Matrix."
+	echo "20) ESTABILIZAR Servidor Completo."
+	echo "21) OPTIMIZAR Servidor Completo."
+	echo "22) ACTUALIZAR Servidor Completo."
 	printf "\n"
 	echo -e "${GREEN}----------------------------------------------------------------------------------------------${STD}"
 	printf "\n"
