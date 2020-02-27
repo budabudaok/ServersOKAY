@@ -657,7 +657,7 @@ seis(){
 		#guardamos la hora actual
 		horaanterior=$(date)
 		sleep 2
-		echo -e "${GREEN}Selecciona por el NÚMERO tu continenete, luego tu pais y por último tu región para setear la hora correcta...${STD}"
+		echo -e "${GREEN}Selecciona por el NÚMERO tu continente, luego tu pais y por último tu región para setear la hora correcta...${STD}"
 		printf "\n"
 		printf "\n"
 		sleep 4
