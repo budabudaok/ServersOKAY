@@ -1338,7 +1338,35 @@ veintiuno(){
 }
 veintidos(){
 
-				echo -e "\e[1;40m" ; clear ; while :; do echo $LINES $COLUMNS $(( $RANDOM % $COLUMNS)) $(( $RANDOM % 72 )) ;sleep 0.05; done|awk '{ letters="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()"; c=$4; letter=substr(letters,c,1);a[$3]=0;for (x in a) {o=a[x];a[x]=a[x]+1; printf "\033[%s;%sH\033[2;32m%s",o,x,letter; printf "\033[%s;%sH\033[1;37m%s\033[0;0H",a[x],x,letter;if (a[x] >= $1) { a[x]=0; } }}'
+		printf "\n"
+		echo "Actualizaremos este servidor sin modificar el Kernel"
+		printf "\n"
+		sleep 2
+		yum clean all #limpiar y actualizar lista de repositorios
+		yum upgrade -y #actualizar repositorios
+		yum -y --exclude=kernel\* update #acualizar sin modificar el kernel
+		
+		if [[ $PANELS == "1" &&  $SO == *"5"* ]] ; then
+				printf "\n"
+				echo -e "Se posee ${GREEN}CentOS 5${STD} no se actualizarán los servicios"
+				printf "\n"
+				printf "\n"
+	    else 
+
+		cd /usr/local/directadmin/custombuild ; ./build versions | grep available ; ./build update_versions
+		fi
+		if [[ $PANELS == "2" ]] ; then
+
+		/usr/local/cpanel/scripts/upcp
+
+		fi
+		sleep 2
+		printf "\n"
+		printf "\n"
+		echo -e "${GREEN}¡Listo! se han instalado las ultimas Actualizaciones${STD}"
+
+		pause
+
 }
 PROXIMO(){
 		printf "\n"
