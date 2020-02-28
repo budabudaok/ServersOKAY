@@ -1108,7 +1108,7 @@ doce(){
 
 		pause
 }
-trece(){
+trece(){ #Actualizar Licencia DirectAdmin
 
 		printf "\n"
 		echo -e "${GREEN}¡Genial! Renovaremos la Licencia de DirectAdmin en este servidor${STD}"
@@ -1138,7 +1138,7 @@ trece(){
 	    echo -e "${GREEN}¡OK! comencemos la renovación..${STD}"
 	    printf "\n"
 
-	    ./getLicense.sh $idclienteda $idlicenciada ; service directadmin restart;
+	    ./getLicense.sh $idclienteda $idlicenciada ; service directadmin restart
 
 	   	printf "\n"
 	    printf "\n"
@@ -1148,7 +1148,7 @@ trece(){
 
 		pause
 }
-catorce(){
+catorce(){ #WGET con autenticación FTP
 			printf "\n"
 		    printf "\n"
 		    echo -e "${GREEN}¡Bien! Indicame la IP del SERVIDOR ORIGEN del cual vamos a realizarle WGET..${STD}"
@@ -1183,7 +1183,7 @@ catorce(){
 		pause
 
 }
-quince(){
+quince(){ # Antivirus y AntiMalware
 		printf "\n"
 		echo -e "${GREEN}¡Bien! habilitemos MALDET y CLAMAV en este servidor:${STD}"
 		printf "\n"
@@ -1221,23 +1221,50 @@ quince(){
 
 		pause
 }
-dieciseis(){
+dieciseis(){ #Contar y Actualizar cuotas de un usuario de DirectAdmn
+
 		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		echo -e "BIEN contaremos todas las ${GREEN}CUOTAS DE UN USUARIO${STD} de Directadmin"
 		printf "\n"
 		printf "\n"
+
+		if [[ $PANELS == "1" ]] ; then
+
+			printf "\n"
+		    echo -e "INDICAME EL ${GREEN}DOMINIO${STD} PARA UBICAR AL USUARIO"
+		    printf "\n"
+		    read -p "DOMINIO: " dominioausuarioda;
+		    #obtener usuario de un dominio.com en directadmin
+			#cat /etc/virtual/domainowners | grep turbosol.com.ar | cut -d: -f2 | awk {'print $1'}
+			usuarioda=$(cat /etc/virtual/domainowners | grep $dominioausuarioda | cut -d: -f2 | awk {'print $1'})
+		    printf "\n"
+		    printf "\n"
+			echo -e "${GREEN}Identificando al usuario${STD}, en el servidor.."
+			sleep 2
+		    printf "\n"
+		    printf "\n"
+		    echo -e "EL USUARIO ES ${GREEN}$usuarioda ${STD} estaré recontando las cuotas del mismo"
+		    printf "\n"
+			printf "\n"
+	    	cd /usr/local/directadmin ;	echo "action=tally&value=$usuarioda&type=user" >> data/task.queue ;	./dataskq d800
+	    	printf "\n"
+	    	printf "\n"
+	    	echo -e "Bien ahora voy a encontrar todos los ${GREEN}ARCHVOS DEL USUARIO ${STD} en el Servidor"
+	    	printf "\n"
+	    	printf "\n"
+			idusuarioda=$(id $usuarioda | awk '{print $1}' | cut -d= -f2 | cut -d'(' -f1)
+			find / -uid $idusuarioda | less
+			printf "\n"
+			printf "\n"
+			/sbin/quotaoff -a; /sbin/quotacheck -augm; /sbin/quotaon -a; //Redhat
+			/usr/sbin/quotaoff -a; /sbin/quotacheck -aug; /usr/sbin/quotaon -a; //FreeBSD
+			echo "action=tally&value=all" >> /usr/local/directadmin/data/task.queue
+		fi
 		sleep 2
-		echo -e "Aplicando la configuración de ModUserDIR..."
-		sleep 2
-		printf "\n"
-		printf "\n"
-		cd /usr/local/directadmin/custombuild
-		./build set userdir_access yes
-		./build rewrite_confs
-		sleep 3
-		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
-		printf "\n"
+	   	printf "\n"
+	    echo -e "${GREEN}¡LISTO!${STD} valida si posee las cuotas actualizadas"
+	    printf "\n"
+	    printf "\n"
 
 		pause
 }
@@ -1316,30 +1343,26 @@ veinte(){
 
 		pause
 }
-veintiuno(){
+veintiuno(){ #OPTIMIZAR todo el Servidor
+
 		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		echo "Optimizaremos este servidor de Manera Completa"
 		printf "\n"
-		printf "\n"
-		sleep 2
-		echo -e "Aplicando la configuración de ModUserDIR..."
-		sleep 2
-		printf "\n"
-		printf "\n"
-		cd /usr/local/directadmin/custombuild
-		./build set userdir_access yes
-		./build rewrite_confs
 		sleep 3
+		#DirectAdmin
+		#Borramos todos los mensajes del Sistema
+		cd /usr/local/directadmin/data/admin ; echo -n "" > tickets.list
+		#CPanel
 		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
+		echo -e "${GREEN}¡Listo!${STD} ya podrás utilizar con mejor Rendimiento el Servidor"
 		printf "\n"
 
 		pause
 }
-veintidos(){
+veintidos(){ #ACTUALIZAR todo el Servidor
 
 		printf "\n"
-		echo "Actualizaremos este servidor sin modificar el Kernel"
+		echo "Actualizaremos este servidor de Manera Completa"
 		printf "\n"
 		sleep 2
 		yum clean all #limpiar y actualizar lista de repositorios
@@ -1353,7 +1376,7 @@ veintidos(){
 				printf "\n"
 	    else 
 
-		cd /usr/local/directadmin/custombuild ; ./build versions | grep available ; ./build update_versions
+		cd /usr/local/directadmin/custombuild ; ; printf "\n" ; printf "\n" ; ./build versions | grep available ; printf "\n" ; printf "\n" ; ./build update_versions 
 		fi
 		if [[ $PANELS == "2" ]] ; then
 
@@ -1409,10 +1432,10 @@ mostrar_menu() {
 	echo "10) Reparar todas la Bases de Datos || Optimizar my.cnf || Analizar my.cnf del SQL"
 	echo "11) IMAPSync de a 10 cuentas"
 	echo "12) Permitir links temporales mediante /~ (DirectAdmin)"
-	echo "13) Actulizar Licencia DirectAdmin"
+	echo "13) Renovar Licencia DirectAdmin"
 	echo "14) WGET con autenticación FTP"
 	echo "15) Instalar MALDET y CLAMAV || Ejecutar Antivirus"
-	echo "16) NADA POR AHORA."
+	echo "16) Recontar Cuotas de un Usuario en Directadmin"
 	echo "17) FIX - Berkeley DB error: /var/spool/exim/db/callout en EXIM"
 	echo "18) NADA POR AHORA."
 	echo "19) NADA POR AHORA."
