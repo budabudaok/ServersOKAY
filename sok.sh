@@ -1376,7 +1376,7 @@ veintidos(){ #ACTUALIZAR todo el Servidor
 				printf "\n"
 	    else 
 
-		cd /usr/local/directadmin/custombuild ; ; printf "\n" ; printf "\n" ; ./build versions | grep available ; printf "\n" ; printf "\n" ; ./build update_versions 
+		cd /usr/local/directadmin/custombuild ; printf "\n" ; printf "\n" ; ./build versions | grep available ; printf "\n" ; printf "\n" ; ./build update_versions 
 		fi
 		if [[ $PANELS == "2" ]] ; then
 
