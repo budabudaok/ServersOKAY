@@ -1243,21 +1243,22 @@ dieciseis(){ #Contar y Actualizar cuotas de un usuario de DirectAdmn
 			sleep 2
 		    printf "\n"
 		    printf "\n"
-		    echo -e "EL USUARIO ES ${GREEN}$usuarioda ${STD} estaré recontando las cuotas del mismo"
+		    echo -e "EL USUARIO ES ${GREEN}$usuarioda${STD} estaré recontando las cuotas del mismo"
 		    printf "\n"
 			printf "\n"
 	    	cd /usr/local/directadmin ;	echo "action=tally&value=$usuarioda&type=user" >> data/task.queue ;	./dataskq d800
 	    	printf "\n"
 	    	printf "\n"
-	    	echo -e "Bien ahora voy a encontrar todos los ${GREEN}ARCHVOS DEL USUARIO ${STD} en el Servidor"
-	    	printf "\n"
-	    	printf "\n"
-			idusuarioda=$(id $usuarioda | awk '{print $1}' | cut -d= -f2 | cut -d'(' -f1)
-			find / -uid $idusuarioda | less
+	    #	echo -e "Bien ahora voy a encontrar todos los ${GREEN}ARCHVOS DEL USUARIO${STD} en el Servidor, aguarda por favor"
+	    #	sleep 4
+	    #	printf "\n"
+	    #	printf "\n"
+		#	idusuarioda=$(id $usuarioda | awk '{print $1}' | cut -d= -f2 | cut -d'(' -f1)
+		#	find / -uid $idusuarioda | less
+		#	printf "\n"
 			printf "\n"
-			printf "\n"
-			/sbin/quotaoff -a; /sbin/quotacheck -augm; /sbin/quotaon -a; //Redhat
-			/usr/sbin/quotaoff -a; /sbin/quotacheck -aug; /usr/sbin/quotaon -a; //FreeBSD
+			/sbin/quotaoff -a; /sbin/quotacheck -augm; /sbin/quotaon -a;
+			# FreeBSD /usr/sbin/quotaoff -a; /sbin/quotacheck -aug; /usr/sbin/quotaon -a;
 			echo "action=tally&value=all" >> /usr/local/directadmin/data/task.queue
 		fi
 		sleep 2
