@@ -1069,16 +1069,16 @@ once(){
 		    echo -e "${GREEN}¡OK! comencemos a realizarle IMAPSync de las 10 cuentas indicadas..${STD}"
 		    printf "\n"
 
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1;
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2;
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3;
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4;
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5;
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6;
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7;
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8;
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9;
-		imapsync --nosslcheck --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9;
+			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10;
 
 		    printf "\n"
 		    echo -e "${GREEN}¡LISTO!${STD} validemos el log de todo el proceso realizado."
@@ -1138,7 +1138,7 @@ trece(){ #Actualizar Licencia DirectAdmin
 	    echo -e "${GREEN}¡OK! comencemos la renovación..${STD}"
 	    printf "\n"
 
-	    ./getLicense.sh $idclienteda $idlicenciada ; service directadmin restart
+	    ./getLicense.sh $idclienteda $idlicenciada ; service directadmin restart  > /dev/null 2>&1 ; /etc/init.d/directadmin restart  > /dev/null 2>&1
 
 	   	printf "\n"
 	    printf "\n"
@@ -1333,7 +1333,9 @@ veinte(){
 			#validamos todos los servicios del servidor
 
 		#cpanel
-		service mysql stop ; service httpd stop ; service exim stop ; cd /scripts/ ; ./restartsrv_apache_php_fpm
+		service mysql stop ; service httpd stop ; service exim stop ; cd /scripts/ ; ./restartsrv_apache_php_fpm ; service mysql start ; service httpd start ; service exim start
+
+		service mysqld stop ; service httpd stop ; service exim stop ; cd /scripts/ ; ./restartsrv_apache_php_fpm ; service mysqld start ; service httpd start ; service exim start
 
 		#directadmin
 		service mysqld stop ; service httpd stop ; service exim stop 
@@ -1358,6 +1360,10 @@ veintiuno(){ #OPTIMIZAR todo el Servidor
 		echo -e "${GREEN}¡Listo!${STD} ya podrás utilizar con mejor Rendimiento el Servidor"
 		printf "\n"
 
+		#antispammer en DirectAdmin
+		cd /usr/local/directadmin/custombuild ; ./build set eximconf yes ; ./build set eximconf_release 4.5 ; ./build set blockcracking yes ; ./build set easy_spam_fighter yes ; ./build set spamassassin yes ; ./build set exim yes ; ./build update ; ./build exim ; ./build exim_conf
+
+
 		pause
 }
 veintidos(){ #ACTUALIZAR todo el Servidor
@@ -1377,7 +1383,7 @@ veintidos(){ #ACTUALIZAR todo el Servidor
 				printf "\n"
 	    else 
 
-		cd /usr/local/directadmin/custombuild ; printf "\n" ; printf "\n" ; ./build versions | grep available ; printf "\n" ; printf "\n" ; ./build update_versions 
+		cd /usr/local/directadmin/custombuild ; printf "\n" ; printf "\n" ; ./build versions | grep available ; printf "\n" ; printf "\n" ; pause 6 ; ./build update_versions 
 		fi
 		if [[ $PANELS == "2" ]] ; then
 
