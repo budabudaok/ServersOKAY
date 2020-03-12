@@ -2,15 +2,25 @@
 #sok.sh - .:SERVER OK:. For Linux with DirectAdmin & CPanel by .:DANIEL BUSTAMANTE:.
 
 #VARIABLES
+
+				#Verificamos si existe el archivo "mysqltuner.pl"
+				#Ejemplo NEGATIVO: test ! -f /etc/resolv.conf && echo "El archivo /etc/resolv.conf NO existe." || echo "El archivo /etc/resolv.conf SI existe."
+				#Ejemplor POSITIVO: test -f /usr/bin/imapsync  && echo "El archivo imapsync SI existe" || echo "l archivo imapsync NO existe"
+
 #identificamos el sistema operativo
-    if cat /etc/redhat-release > /dev/null 2>&1
+    if test -f /etc/redhat-release > /dev/null 2>&1
     then 
 	    RedHat=$(cat /etc/redhat-release)
 	    SO=$RedHat
-	    DLX=
-    else 
-	    Debian=$(lsb_release -a)
-	    SO=$Debian
+	else
+	    if test -f /etc/debian_version > /dev/null 2>&1
+	    then
+		    Debian=$(/etc/debian_version);
+		    SO=$Debian
+		else
+			DebianX=$(lsb_release -a)
+			SO=$DebianX
+		fi
     fi
 #identificamos el panel de control y su versión, importante para otras funciones
 	if cat /usr/local/directadmin/custombuild/versions.txt > /dev/null 2>&1
@@ -604,14 +614,20 @@ cinco(){
 			printf "\n"
 			printf "\n"
 
-			
-		else
-		#instalaremos Let's Encrytp en WHM
-			/scripts/install_lets_encrypt_autossl_provider
-			printf "\n"
-			echo -e "${GREEN}¡Genial! Let's Encryt quedo instalado y listo para usarse${STD}"
-			printf "\n"
-			printf "\n"
+				if 	[[ $PANELS == "2" ]] ; then
+				#instalaremos Let's Encrytp en WHM
+					/scripts/install_lets_encrypt_autossl_provider
+					printf "\n"
+					echo -e "${GREEN}¡Genial! Let's Encryt quedo instalado y listo para usarse${STD}"
+					printf "\n"
+					printf "\n"
+				fi	
+				
+		else 
+		cd /
+		sudo wget https://dl.eff.org/certbot-auto -O /usr/sbin/certbot-auto
+		sudo chmod a+x /usr/sbin/certbot-auto
+
 
 	        
     	fi
@@ -747,7 +763,6 @@ siete(){
 		    printf "\n"
 		      ;;
 		  esac
-		#done
 
         pause
 }
@@ -1289,21 +1304,68 @@ diecisiete(){
 }
 dieciocho(){
 		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
+		echo -e "Bien estamos en un Servidor con ${GREEN}$SO${STD}"
 		printf "\n"
-		printf "\n"
-		sleep 2
-		echo -e "Aplicando la configuración de ModUserDIR..."
-		sleep 2
-		printf "\n"
-		printf "\n"
-		cd /usr/local/directadmin/custombuild
-		./build set userdir_access yes
-		./build rewrite_confs
-		sleep 3
-		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
-		printf "\n"
+		read -r -p "¿Instalamos DIRECTADMIN [1] ó CPANEL [2] en este SERVIDOR? [1/2] " input
+
+		  case $input in
+		      1)
+				printf "\n"
+				echo -e "¡Genial! instalemos ${GREEN}DIRECTADMIN${STD} en este servidor${STD}"
+				printf "\n"
+				printf "\n"
+				sleep 4
+				echo -e "Aplicando la configuración necesaria..."
+				sleep 2
+				printf "\n"
+				printf "\n"
+				#detectamos la version del SO
+				if [[ $SO == *"CentOS"* &&  $SO == *"7"* ]] ; then
+
+				service iptables save > /dev/null 2>&1 ; service iptables stop > /dev/null 2>&1 ; chkconfig iptables off > /dev/null 2>&1 ; service firewalld stop > /dev/null 2>&1 ; systemctl stop NetworkManager > /dev/null 2>&1 ; systemctl disable NetworkManager > /dev/null 2>&1 ;
+
+				#instalemos los Common pre-install commands para Centos7
+				yum install wget tar gcc gcc-c++ flex bison make bind bind-libs bind-utils openssl openssl-devel perl quota libaio \
+				libcom_err-devel libcurl-devel gd zlib-devel zip unzip libcap-devel cronie bzip2 cyrus-sasl-devel perl-ExtUtils-Embed \
+				autoconf automake libtool which patch mailx bzip2-devel lsof glibc-headers kernel-devel expat-devel \
+				psmisc net-tools systemd-devel libdb-devel perl-DBI perl-Perl4-CoreLibs perl-libwww-perl xfsprogs rsyslog logrotate crontabs file kernel-headers
+
+				cd / ; wget https://www.directadmin.com/setup.sh ; chmod 755 setup.sh ; ./setup.sh auto
+			 	fi
+				sleep 2
+				printf "\n"
+				echo -e "¡Listo! se ha instalado el panel ${GREEN}¡correctamente!${STD}"
+				printf "\n"
+
+		      ;;
+		      2)
+
+		     	printf "\n"
+				echo -e "${GREEN}¡Genial! instalemos CPANEL/WHM en este servidor:${STD}"
+				printf "\n"
+				printf "\n"
+				sleep 2
+				echo -e "Aplicando la configuración necesaria..."
+				sleep 2
+				printf "\n"
+				printf "\n"
+
+				service iptables save > /dev/null 2>&1 ; service iptables stop > /dev/null 2>&1 ; chkconfig iptables off > /dev/null 2>&1 ; service firewalld stop > /dev/null 2>&1 ; systemctl stop NetworkManager > /dev/null 2>&1 ; systemctl disable NetworkManager > /dev/null 2>&1 ;
+
+				cd /home && curl -o latest -L https://securedownloads.cpanel.net/latest && sh latest
+
+				sleep 2
+				printf "\n"
+				echo -e "${GREEN}¡Listo! se instaló APACHE como tu WebServer${STD}"
+				printf "\n"
+
+		      ;;
+		      *)
+			printf "\n"
+		    echo "Mmmm.. tómate un ${GREEN}café${STD}, elegiste una opción incorrecta"
+		    printf "\n"
+		      ;;
+		  esac
 
 		pause
 }
@@ -1355,6 +1417,8 @@ veintiuno(){ #OPTIMIZAR todo el Servidor
 		#DirectAdmin
 		#Borramos todos los mensajes del Sistema
 		cd /usr/local/directadmin/data/admin ; echo -n "" > tickets.list
+		#Borramos todos las ips bloqueadas en el servidor 
+		cd /usr/local/directadmin/data/admin ; echo -n "" > ip_blacklist
 		#CPanel
 		printf "\n"
 		echo -e "${GREEN}¡Listo!${STD} ya podrás utilizar con mejor Rendimiento el Servidor"
@@ -1444,7 +1508,7 @@ mostrar_menu() {
 	echo "15) Instalar MALDET y CLAMAV || Ejecutar Antivirus"
 	echo "16) Recontar Cuotas de un Usuario en Directadmin"
 	echo "17) FIX - Berkeley DB error: /var/spool/exim/db/callout en EXIM"
-	echo "18) NADA POR AHORA."
+	echo "18) Instalar DIRECTADMIN | WHM/CPANEL (Servidor Limpio)"
 	echo "19) NADA POR AHORA."
 	echo "20) ESTABILIZAR Servidor Completo."
 	echo "21) OPTIMIZAR Servidor Completo."
