@@ -1153,7 +1153,7 @@ trece(){ #Actualizar Licencia DirectAdmin
 	    echo -e "${GREEN}¡OK! comencemos la renovación..${STD}"
 	    printf "\n"
 
-	    ./getLicense.sh $idclienteda $idlicenciada ; service directadmin restart  > /dev/null 2>&1 ; /etc/init.d/directadmin restart  > /dev/null 2>&1
+	    cd /usr/local/directadmin/scripts/ ; ./getLicense.sh $idclienteda $idlicenciada ; service directadmin restart  > /dev/null 2>&1 ; /etc/init.d/directadmin restart  > /dev/null 2>&1
 
 	   	printf "\n"
 	    printf "\n"
