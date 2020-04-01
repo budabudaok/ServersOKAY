@@ -1215,13 +1215,16 @@ quince(){ # Antivirus y AntiMalware
 		echo -e "¡Genial! se intaló ${GREEN}Linux Malware Detect${STD} satisfactoriamente, continuemos con ${GREEN}ClamAV Antivirus${STD}.."
 		sleep 3
 		#descargar e unstalar CLAMAV
-		apt install yum
-		yum update && yum install clamav ; maldet -u
-		yum install epel-release ; yum update && yum install clamav ; maldet -u
-		
-		#descargar e unstalar CLAMAV en Debian
-		sudo apt-get update && sudo apt-get upgrade -y ; sudo apt-get install clamav clamav-daemon -y; sudo freshclam
+		if [[ $SO == *"CentOS"* ]] ; then
 
+			yum update && yum install clamav ; maldet -u
+			yes|yum install epel-release ; yum update && yes|yum install clamav ; maldet -u
+
+	    else
+	    	#descargar e unstalar CLAMAV en Debian
+			sudo apt-get update && sudo apt-get upgrade -y ; sudo apt-get install clamav clamav-daemon -y; sudo freshclam
+
+	    fi
 		printf "\n"
 		printf "\n"
 		sleep 4
