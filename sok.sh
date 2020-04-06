@@ -957,149 +957,283 @@ diez(){
 }
 
 once(){
-		    printf "\n"
-		    echo -e "Primero validaremos si ${GREEN}IMAPSync${STD} está instalado en este servidor"
-		    printf "\n"
-		     #testear si imapsync está instalado en el equipo, sino instalarlo...
-			if test -f /usr/bin/imapsync ; 
-				then
-				printf "\n"
-				echo "IMAPSync no está instalado, procederé a instalarlo..."
-				sleep 2
-				printf "\n"
-				yum install --enablerepo=extras epel-release ; yum install imapsync -y ; clear
-				clear
-				else
-				statusimapsync=INSTALADO
-				clear
-			fi
-
-		    printf "\n"
-		    printf "\n"
-		    echo -e "${GREEN}¡Bien! Indicame el DOMINIO que vamos a realizarle IMAPSync..${STD}"
-		    printf "\n"
-		    read -p "DOMINIO: " dominioorigen1;
-		    printf "\n"
-
-		    #obtenemos el MX del dominio indicado
-		    mxdominioorigen1=$(nslookup -query=mx  $dominioorigen1 | awk '{print $6, $5 }' | head -9 | sort -n)
-		    #obtenemos el registro IMAP del dominio del dominio indicado
-		    ipdeimapdominioorigen1=$(nslookup -query=a imap.$dominioorigen1 | tail -2 | cut -d: -f2)
-		    ipdemaildominioorigen1=$(nslookup -query=a mail.$dominioorigen1 | tail -2 | cut -d: -f2)
-		    IPS=$(ip addr show scope global | awk '$1 ~ /^inet/ {print $2}' | cut -f1 -d "/" -s | sort)
-		    sleep 2
-		    
+	    printf "\n"
+	    echo -e "Primero validaremos si ${GREEN}IMAPSync${STD} está instalado en este servidor"
+	    printf "\n"
+	     #testear si imapsync está instalado en el equipo, sino instalarlo...
+		if test -f /usr/bin/imapsync ; 
+			then
 			printf "\n"
-		    echo -e "El dominio ${GREEN}$dominioorigen1${STD} posee los siguientes registros IMAP y MAIL en sus DNS:"
-		    echo -e "${GREEN}IP de IMAP.$dominioorigen1:${STD}$ipdeimapdominioorigen1"
-		    echo -e "${GREEN}IP de MAIL.$dominioorigen1:${STD}$ipdemaildominioorigen1"
-		    echo -e "${GREEN}IP de DE ESTE SERVIDOR:${STD}"
-		    echo "$IPS"
-		    echo -e "IMAPSync: ${GREEN}$statusimapsync${STD}"
-
-		    printf "\n"
-		    printf "\n"
-		    echo -e "INGRESA ${GREEN}ALGUNA IP${STD} desde la cual OBTENDREMOS todos los emails.."
-		    printf "\n"
-		    read -p "A) IP ORIGEN (desde donde se absorberan los emails): " ipmanualdeldominioorigen1;
-		    printf "\n"
-		    printf "\n"
-		    echo -e "INGRESA ${GREEN}ALGUNA IP${STD} a donde ENVIAREMOS todos los emails.."
-		    printf "\n"
-		    read -p "B) IP DESTINO (a donde se migraran los emails): " ipmanualdeldominiodestino1;
-
-		  
-
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}1 de 10${STD} a migrar.."
+			echo "IMAPSync no está instalado, procederé a instalarlo..."
+			sleep 2
 			printf "\n"
-		    read -p "E-mail 1 de 10: " EMAIL1;
-		    read -p "Contraseña: " PASS1;
-		    printf "\n"
+			yum install --enablerepo=extras epel-release ; yum install imapsync -y ; clear
+			clear
+			else
+			statusimapsync=INSTALADO
+			clear
+		fi
 
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}2 de 10${STD} a migrar.."
-			printf "\n"
-		    read -p "E-mail 2 de 10: " EMAIL2;
-		    read -p "Contraseña: " PASS2;
-		    printf "\n"
+	    printf "\n"
+	    printf "\n"
+	    echo -e "${GREEN}¡Bien! Indicame el DOMINIO que vamos a realizarle IMAPSync..${STD}"
+	    printf "\n"
+	    read -p "DOMINIO: " dominioorigen1;
+	    printf "\n"
 
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}3 de 10${STD} a migrar.."
-			printf "\n"
-		    read -p "E-mail 3 de 10: " EMAIL3;
-		    read -p "Contraseña: " PASS3;
-		    printf "\n"
-		    
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}4 de 10${STD} a migrar.."
-			printf "\n"
-		    read -p "E-mail 4 de 10: " EMAIL4;
-		    read -p "Contraseña: " PASS4;
-		    printf "\n"
-		    
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}5 de 10${STD} a migrar.."
-			printf "\n"
-		    read -p "E-mail 5 de 10: " EMAIL5;
-		    read -p "Contraseña: " PASS5;
-		    printf "\n"
-		    
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}6 de 10${STD} a migrar.."
-			printf "\n"
-		    read -p "E-mail 6 de 10: " EMAIL6;
-		    read -p "Contraseña: " PASS6;
-		    printf "\n"
-		    
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}7 de 10${STD} a migrar.."
-			printf "\n"
-		    read -p "E-mail 7 de 10: " EMAIL7;
-		    read -p "Contraseña: " PASS7;
-		    printf "\n"
-		    
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}8 de 10${STD} a migrar.."
-			printf "\n"
-		    read -p "E-mail 8 de 10: " EMAIL8;
-		    read -p "Contraseña: " PASS8;
-		    printf "\n"
-		    
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}9 de 10${STD} a migrar.."
-			printf "\n"
-		    read -p "E-mail 9 de 10: " EMAIL9;
-		    read -p "Contraseña: " PASS9;
-		    printf "\n"
-		    
-		    printf "\n"
-			echo -e "Indicame la cuenta de email ${GREEN}10 de 10${STD} a migrar.."
-			printf "\n"
-		    read -p "E-mail 10 de 10: " EMAIL10;
-		    read -p "Contraseña: " PASS10;
-		    printf "\n"
+	    #obtenemos el MX del dominio indicado
+	    mxdominioorigen1=$(nslookup -query=mx  $dominioorigen1 | awk '{print $6, $5 }' | head -9 | sort -n)
+	    #obtenemos el registro IMAP del dominio del dominio indicado
+	    ipdeimapdominioorigen1=$(nslookup -query=a imap.$dominioorigen1 | tail -2 | cut -d: -f2)
+	    ipdemaildominioorigen1=$(nslookup -query=a mail.$dominioorigen1 | tail -2 | cut -d: -f2)
+	    IPS=$(ip addr show scope global | awk '$1 ~ /^inet/ {print $2}' | cut -f1 -d "/" -s | sort)
+	    sleep 2
+	    
+		printf "\n"
+	    echo -e "El dominio ${GREEN}$dominioorigen1${STD} posee los siguientes registros IMAP y MAIL en sus DNS:"
+	    echo -e "${GREEN}IP de IMAP.$dominioorigen1:${STD}$ipdeimapdominioorigen1"
+	    echo -e "${GREEN}IP de MAIL.$dominioorigen1:${STD}$ipdemaildominioorigen1"
+	    echo -e "${GREEN}IP de DE ESTE SERVIDOR:${STD}"
+	    echo "$IPS"
+	    echo -e "IMAPSync: ${GREEN}$statusimapsync${STD}"
 
-		    printf "\n"
-		    echo -e "${GREEN}¡OK! comencemos a realizarle IMAPSync de las 10 cuentas indicadas..${STD}"
-		    printf "\n"
+	    #si tienen la misma contraseña o no 
+	    printf "\n"
+	    printf "\n"
+		read -r -p "¿Todas las cuentas de EMAILS poseen la ${GREEN}MISMA CONTRASEÑA${STD} en los dos SERVIDORES? [SI/NO] " inputmypassopt
+		printf "\n"
+		printf "\n"
+		case $inputmypassopt in
+		     s|si|S|SI)
+				
+					printf "\n"
+				    printf "\n"
+				    echo -e "INGRESA ${GREEN}ALGUNA IP${STD} desde la cual OBTENDREMOS todos los emails.."
+				    printf "\n"
+				    read -p "A) IP ORIGEN (desde donde se absorberan los emails): " ipmanualdeldominioorigen1;
+				    printf "\n"
+				    printf "\n"
+				    echo -e "INGRESA ${GREEN}ALGUNA IP${STD} a donde ENVIAREMOS todos los emails.."
+				    printf "\n"
+				    read -p "B) IP DESTINO (a donde se migraran los emails): " ipmanualdeldominiodestino1;
 
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1;
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2;
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3;
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4;
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5;
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6;
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7;
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8;
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9;
-			imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10;
+				  
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}1 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 1 de 10: " EMAIL1;
+				    read -p "Contraseña: " PASS1;
+				    printf "\n"
 
-		    printf "\n"
-		    echo -e "${GREEN}¡LISTO!${STD} validemos el log de todo el proceso realizado."
-		    printf "\n"
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}2 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 2 de 10: " EMAIL2;
+				    read -p "Contraseña: " PASS2;
+				    printf "\n"
+
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}3 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 3 de 10: " EMAIL3;
+				    read -p "Contraseña: " PASS3;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}4 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 4 de 10: " EMAIL4;
+				    read -p "Contraseña: " PASS4;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}5 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 5 de 10: " EMAIL5;
+				    read -p "Contraseña: " PASS5;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}6 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 6 de 10: " EMAIL6;
+				    read -p "Contraseña: " PASS6;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}7 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 7 de 10: " EMAIL7;
+				    read -p "Contraseña: " PASS7;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}8 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 8 de 10: " EMAIL8;
+				    read -p "Contraseña: " PASS8;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}9 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 9 de 10: " EMAIL9;
+				    read -p "Contraseña: " PASS9;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}10 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 10 de 10: " EMAIL10;
+				    read -p "Contraseña: " PASS10;
+				    printf "\n"
+
+				    printf "\n"
+				    echo -e "${GREEN}¡OK! comencemos a realizarle IMAPSync de las 10 cuentas indicadas..${STD}"
+				    printf "\n"
+
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10;
+
+				    printf "\n"
+				    echo -e "${GREEN}¡LISTO!${STD} validemos el log de todo el proceso realizado."
+				    printf "\n"
 
 
+				pause
+			;;
+		     n|no|N|NO)
+
+				    printf "\n"
+				    printf "\n"
+				    echo -e "INGRESA ${GREEN}ALGUNA IP${STD} desde la cual OBTENDREMOS todos los emails.."
+				    printf "\n"
+				    read -p "A) IP ORIGEN (desde donde se absorberan los emails): " ipmanualdeldominioorigen1;
+				    printf "\n"
+				    printf "\n"
+				    echo -e "INGRESA ${GREEN}ALGUNA IP${STD} a donde ENVIAREMOS todos los emails.."
+				    printf "\n"
+				    read -p "B) IP DESTINO (a donde se migraran los emails): " ipmanualdeldominiodestino1;
+
+				  
+
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}1 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 1 de 10: " EMAIL1;
+				    read -p "Contraseña ORIGEN: " PASS1O;
+				    read -p "Contraseña DESTINO: " PASS1D;
+				    printf "\n"
+
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}2 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 2 de 10: " EMAIL2;
+				    read -p "Contraseña ORIGEN: " PASS2O;
+				    read -p "Contraseña DESTINO: " PASS2D;
+				    printf "\n"
+
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}3 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 3 de 10: " EMAIL3;
+				    read -p "Contraseña ORIGEN: " PASS3O;
+				    read -p "Contraseña DESTINO: " PASS3D;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}4 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 4 de 10: " EMAIL4;
+				    read -p "Contraseña ORIGEN: " PASS4O;
+				    read -p "Contraseña DESTINO: " PASS4D;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}5 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 5 de 10: " EMAIL5;
+				    read -p "Contraseña ORIGEN: " PASS5O;
+				    read -p "Contraseña DESTINO: " PASS6D;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}6 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 6 de 10: " EMAIL6;
+				    read -p "Contraseña ORIGEN: " PASS6O;
+				    read -p "Contraseña DESTINO: " PASS6D;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}7 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 7 de 10: " EMAIL7;
+				    read -p "Contraseña ORIGEN: " PASS7O;
+				    read -p "Contraseña DESTINO: " PASS7D;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}8 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 8 de 10: " EMAIL8;
+				    read -p "Contraseña ORIGEN: " PASS8O;
+				    read -p "Contraseña DESTINO: " PASS8D;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}9 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 9 de 10: " EMAIL9;
+				    read -p "Contraseña ORIGEN: " PASS9O;
+				    read -p "Contraseña DESTINO: " PASS9D;
+				    printf "\n"
+				    
+				    printf "\n"
+					echo -e "Indicame la cuenta de email ${GREEN}10 de 10${STD} a migrar.."
+					printf "\n"
+				    read -p "E-mail 10 de 10: " EMAIL10;
+				    read -p "Contraseña ORIGEN: " PASS10O;
+				    read -p "Contraseña DESTINO: " PASS10D;
+				    printf "\n"
+
+				    printf "\n"
+				    echo -e "${GREEN}¡OK! comencemos a realizarle IMAPSync de las 10 cuentas indicadas..${STD}"
+				    printf "\n"
+
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1D;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2D;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3D;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4D;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5D;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6D;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7D;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8D;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9D;
+					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10D;
+
+				    printf "\n"
+				    echo -e "${GREEN}¡LISTO!${STD} validemos el log de todo el proceso realizado."
+				    printf "\n"
+
+					pause
+
+		     ;;
+		     *)
+			 printf "\n"
+			 echo "Mmmm.. tómate un café, elegiste una opción incorrecta"
+			 printf "\n"
+		 ;;
+		 esac
+		 
 		pause
 }
 doce(){	
