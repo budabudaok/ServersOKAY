@@ -1092,16 +1092,16 @@ once(){
 				    echo -e "${GREEN}¡OK! comencemos a realizarle IMAPSync de las 10 cuentas indicadas..${STD}"
 				    printf "\n"
 
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10 --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10;
 
 				    printf "\n"
 				    echo -e "${GREEN}¡LISTO!${STD} validemos el log de todo el proceso realizado."
@@ -1209,16 +1209,16 @@ once(){
 				    echo -e "${GREEN}¡OK! comencemos a realizarle IMAPSync de las 10 cuentas indicadas..${STD}"
 				    printf "\n"
 
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1D;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2D;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3D;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4D;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5D;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6D;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7D;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8D;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9D;
-					imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL1 --password1 $PASS1O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL1 --password2 $PASS1D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL2 --password1 $PASS2O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL2 --password2 $PASS2D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL3 --password1 $PASS3O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL3 --password2 $PASS3D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL4 --password1 $PASS4O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL4 --password2 $PASS4D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL5 --password1 $PASS5O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL5 --password2 $PASS5D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL6 --password1 $PASS6O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL6 --password2 $PASS6D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL7 --password1 $PASS7O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL7 --password2 $PASS7D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL8 --password1 $PASS8O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL8 --password2 $PASS8D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL9 --password1 $PASS9O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL9 --password2 $PASS9D;
+						imapsync --host1  $ipmanualdeldominioorigen1 --user1 $EMAIL10 --password1 $PASS10O --host2 $ipmanualdeldominiodestino1 --user2 $EMAIL10 --password2 $PASS10D;
 
 				    printf "\n"
 				    echo -e "${GREEN}¡LISTO!${STD} validemos el log de todo el proceso realizado."
