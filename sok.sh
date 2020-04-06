@@ -1000,7 +1000,7 @@ once(){
 	    #si tienen la misma contraseña o no 
 	    printf "\n"
 	    printf "\n"
-		read -r -p "¿Todas las cuentas de EMAILS poseen la ${GREEN}MISMA CONTRASEÑA${STD} en los dos SERVIDORES? [SI/NO] " inputmypassopt
+		read -r -p "¿Todas las cuentas de EMAILS poseen la MISMA CONTRASEÑA en los dos SERVIDORES? [SI/NO] " inputmypassopt
 		printf "\n"
 		printf "\n"
 		case $inputmypassopt in
@@ -1233,7 +1233,7 @@ once(){
 			 printf "\n"
 		 ;;
 		 esac
-		 
+
 		pause
 }
 doce(){	
