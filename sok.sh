@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 #sok.sh - .:SERVER OK:. For Linux with DirectAdmin & CPanel by .:DANIEL BUSTAMANTE:.
 
-#VARIABLES
-
-				#Verificamos si existe el archivo "mysqltuner.pl"
-				#Ejemplo NEGATIVO: test ! -f /etc/resolv.conf && echo "El archivo /etc/resolv.conf NO existe." || echo "El archivo /etc/resolv.conf SI existe."
-				#Ejemplor POSITIVO: test -f /usr/bin/imapsync  && echo "El archivo imapsync SI existe" || echo "l archivo imapsync NO existe"
 
 #identificamos el sistema operativo
     if test -f /etc/redhat-release > /dev/null 2>&1;
@@ -237,8 +232,10 @@ $VersionesPHP
 $VersionesModoPHP
 ${GREEN}DNS:${STD}
 $DNS
- \n
+${GREEN}Mensajes del Sistema:${STD}
+$(cat /var/log/messages  | grep -i kernel | grep -i error | grep -i ext)
 
+ \n
 "
     pause
 }
