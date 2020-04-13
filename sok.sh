@@ -976,7 +976,7 @@ once(){
 		statusimapsync=INSTALADO
 		clear
 		#bajamos el csf y el iptables
-		csf -f ; csf -x ; service iptables stop > /dev/null 2>&1 
+		csf -f > /dev/null 2>&1 ; csf -x > /dev/null 2>&1 ; service iptables stop > /dev/null 2>&1
 
 		#se inicia el proceso de analisis del dominio
 	    printf "\n"
