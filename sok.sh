@@ -17,14 +17,12 @@
 	    then
 		    Debian=$(/etc/debian_version);
 		    SO=$Debian
-			else
-				DebianX=$(lsb_release -a)
-				SO=$DebianX
-				else 
-					DebianY=$(uname -a)
-					SO=$DebianY		
-				fi
-			fi    
+		else
+			DebianX=$(lsb_release -a)
+			SO=$DebianX
+		else 
+			DebianY=$(uname -a)
+			SO=$DebianY			    
     	fi
     fi  
 #identificamos el panel de control y su versión, importante para otras funciones
