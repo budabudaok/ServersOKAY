@@ -975,7 +975,10 @@ once(){
 		yum install --enablerepo=extras epel-release ; yum install imapsync -y
 		statusimapsync=INSTALADO
 		clear
-		
+		#bajamos el csf y el iptables
+		csf -f ; csf -x ; service iptables stop > /dev/null 2>&1 
+
+		#se inicia el proceso de analisis del dominio
 	    printf "\n"
 	    printf "\n"
 	    echo -e "${GREEN}¡Bien! Indicame el DOMINIO que vamos a realizarle IMAPSync..${STD}"
