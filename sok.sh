@@ -16,9 +16,9 @@
 	    if test -f /etc/debian_version > /dev/null 2>&1
 	    then
 		    Debian=$(/etc/debian_version)
-		    SO=$Debian    
-	else
-		if test -f lsb_release -a > /dev/null 2>&1
+		    SO=$Debian
+
+	if test -f lsb_release -a > /dev/null 2>&1
 		then
 			DebianX=$(lsb_release -a)
 			SO=$DebianX
