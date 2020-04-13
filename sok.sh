@@ -8,24 +8,27 @@
 				#Ejemplor POSITIVO: test -f /usr/bin/imapsync  && echo "El archivo imapsync SI existe" || echo "l archivo imapsync NO existe"
 
 #identificamos el sistema operativo
-    if test -f /etc/redhat-release > /dev/null 2>&1
-    then 
+    if test -f /etc/redhat-release > /dev/null 2>&1;
+    	then 
 	    RedHat=$(cat /etc/redhat-release)
 	    SO=$RedHat
-	else
-	    if test -f /etc/debian_version > /dev/null 2>&1
-	    then
-		    Debian=$(/etc/debian_version)
-		    SO=$Debian
-
-	if test -f lsb_release -a > /dev/null 2>&1
-		then
-			DebianX=$(lsb_release -a)
-			SO=$DebianX
-	else 
-			DebianY=$(uname -a)
-			SO=$DebianY			    
+	
+	    if test -f /etc/debian_version > /dev/null 2>&1;
+		    then
+			    Debian=$(/etc/debian_version)
+			    SO=$Debian
+	    
+			if test -f lsb_release -a > /dev/null 2>&1;	
+				then
+					DebianX=$(lsb_release -a)
+					SO=$DebianX
+				else 
+					DebianY=$(uname -a)
+					SO=$DebianY
+			fi
+		fi					    
     fi  
+
 #identificamos el panel de control y su versión, importante para otras funciones
 	if cat /usr/local/directadmin/custombuild/versions.txt > /dev/null 2>&1
 	then
@@ -927,8 +930,6 @@ diez(){
 				cd /
 
 				#Verificamos si existe el archivo "mysqltuner.pl"
-				#Ejemplo NEGATIVO: test ! -f /etc/resolv.conf && echo "El archivo /etc/resolv.conf NO existe." || echo "El archivo /etc/resolv.conf SI existe."
-				#Ejemplor POSITIVO: test -f /usr/bin/imapsync  && echo "El archivo imapsync SI existe" || echo "l archivo imapsync NO existe"
 
 				if test -f /MySQLTuner-perl-master/mysqltuner.pl ; then
 					cd MySQLTuner-perl-master
@@ -966,22 +967,15 @@ diez(){
 
 once(){
 	    printf "\n"
-	    echo -e "Primero validaremos si ${GREEN}IMAPSync${STD} está instalado en este servidor"
+	    echo -e "Primero reinstalemos ${GREEN}IMAPSync${STD} en este servidor.."
 	    printf "\n"
+	    sleep 3
 	     #testear si imapsync está instalado en el equipo, sino instalarlo...
-		if test -f /usr/bin/imapsync ; 
-			then
-			printf "\n"
-			echo "IMAPSync no está instalado, procederé a instalarlo..."
-			sleep 2
-			printf "\n"
-			yum install --enablerepo=extras epel-release ; yum install imapsync -y ; clear
-			clear
-			else
-			statusimapsync=INSTALADO
-			clear
-		fi
-
+		printf "\n"
+		yum install --enablerepo=extras epel-release ; yum install imapsync -y
+		statusimapsync=INSTALADO
+		clear
+		
 	    printf "\n"
 	    printf "\n"
 	    echo -e "${GREEN}¡Bien! Indicame el DOMINIO que vamos a realizarle IMAPSync..${STD}"
