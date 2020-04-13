@@ -17,14 +17,16 @@
 	    then
 		    Debian=$(/etc/debian_version);
 		    SO=$Debian
-		else
-			DebianX=$(lsb_release -a)
-			SO=$DebianX
-		else 
-			DebianY=$(uname -a)
-			SO=$DebianY		
-		fi
-    fi
+			else
+				DebianX=$(lsb_release -a)
+				SO=$DebianX
+				else 
+					DebianY=$(uname -a)
+					SO=$DebianY		
+				fi
+			fi    
+    	fi
+    fi  
 #identificamos el panel de control y su versión, importante para otras funciones
 	if cat /usr/local/directadmin/custombuild/versions.txt > /dev/null 2>&1
 	then
