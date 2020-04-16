@@ -37,12 +37,12 @@
 	fi
 
 #identificamos el MotherBoard
-	MTHBD=$(dmidecode | grep -A3 '^System Information' | grep Manufacturer)
+	MTHBD=$(dmidecode | grep -A3 '^System Information' | grep Manufacturer | xargs)
 
 #Identificamos el CPU
 	if dmidecode | grep CPU | grep Version | cut -d: -f2 > /dev/null 2>&1
 	then
-	CPU=$(cat /proc/cpuinfo | grep 'CPU' | head -1 | cut -d: -f2)
+	CPU=$(cat /proc/cpuinfo | grep 'CPU' | head -1 | cut -d: -f2 | xargs)
 	else
 	CPU=$(dmidecode | grep CPU | grep Version | cut -d: -f2)
 	fi
@@ -61,8 +61,6 @@
 	VersionAPACHE=$(httpd -v | awk {'print $3 ; exit'} | cut -d/ -f2)
 #informamos version de mysql
 	VersionMYSQL=$(mysql --version|awk '{ print $5 }'|awk -F\, '{ print $1 }')
-#informamos cantidad de emails en la cola de emails
-	COLAexim=$(exim -bpc)
 #informamos sus DNS
 	DNS=$(cat /etc/resolv.conf | awk {'print $2'})
 #informamos la carga actual
@@ -73,6 +71,11 @@
 	Fecha=$(date +'%d-%m-%Y')
 #informamos la hora actual
 	Hora=$(date | awk {'print $4 , $5'})
+#informamos la version del CSF
+CSFversion=$(csf -V | cut -d: -f2 | xargs)
+#informamos la cantidad de emails en el Exim
+ColaExim=$(exim -bpc)
+
 #informamos link temporales de usuarios
 	if [[ $PANELS == "1" ]] ; then
 	LinkUsuariosDA=$(cat /usr/local/directadmin/custombuild/options.conf | grep userdir_access)
@@ -176,7 +179,7 @@
 	if [[ $PANELS == "1" ]] ; then
 		topemisores=$(cat /var/log/directadmin/system.log* | grep sent | sort -n | cut -d: -f7 | head -5)
 	else
-		topemisores=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | head -5)
+		topemisores=$(exigrep @ /var/log/exim_mainlog | grep _login | sed -n 's/.*_login:\(.*\)S=.*/\1/p' | sort | uniq -c | sort -nr -k1 | head -5 | awk '{print $1" "$2}')
 	fi
 
 #hacemos telnet al puerto 25, 587,
@@ -211,32 +214,34 @@ pause(){
 uno(){
 	clear
 	printf "\n"
-	echo -e "
-${GREEN}CPU:${STD} $CPU ${GREEN}RAM:${STD} $RAM 
-${GREEN}DISCO:${STD} $HD 
-${GREEN}MOTHERBOARD:${STD} $MTHBD
-${GREEN}Hostname:${STD} $HOSTNAME ${GREEN}RDNS:${STD} $RDNS ${GREEN}PTR:${STD} $PTR
-${GREEN}Sistema Operativo:${STD} $SO 
-${GREEN}Panel de Control:${STD} $PANEL ${GREEN}Version de Panel:${STD} $PANELversion
-${GREEN}Let's Encryt:${STD} $letsencrytstatus ${GREEN}ModUserDIR /~:${STD} $ModUserDirstatus ${GREEN}SpamaAsassins:${STD} $Spamassasinsstatus
-${GREEN}Carga actual:${STD} $Carga ${GREEN}Carga hace 15 minutos:${STD} $Carga15
-${GREEN}Fecha:${STD} $Fecha ${GREEN}Hora:${STD} $Hora
-${GREEN}Apache:${STD} $VersionAPACHE ${GREEN}WebServer:${STD} $VersionWebSrv ${GREEN}MySQL:${STD} $VersionMYSQL
-${GREEN}CSF:${STD} $(csf -V | cut -d: -f2)
-${GREEN}Exim:${STD} $VersionEXIM ${GREEN}Puertos SMTP:${STD} $PuertosSMTP
-${GREEN}Correos en cola:${STD} $(exim -bpc) ${GREEN}IP SMTP:${STD} $IPdelSMTP
-${GREEN}Top 5 emisores:${STD}
-$topemisores
-${GREEN}Versiones de PHP:${STD}
-$VersionesPHP
-$VersionesModoPHP
-${GREEN}DNS:${STD}
-$DNS
-${GREEN}Mensajes del Sistema:${STD}
-$(cat /var/log/messages  | grep -i kernel | grep -i error | grep -i ext)
+	echo -e "${GREEN}==================================================================================================================${STD}"
+	echo -e "${GREEN}|CPU:${STD}$CPU \t ${GREEN}|MOTHERBOARD:${STD}$MTHBD"
+	echo -e "${GREEN}|RAM:${STD}$RAM \t ${GREEN}|HORA:${STD}$Hora \t  ${GREEN}|FECHA:${STD}$Fecha"
+	echo -e "${GREEN}------------------------------------------------------------------------------------------------------------------${STD}"
+	echo -e "${GREEN}|SISTEMA OPERATIVO:${STD}$SO \t  ${GREEN}|CARGA:${STD}$Carga \t ${GREEN}|CARGA 15':${STD}$Carga15"
+	echo -e "${GREEN}|HOSTNAME:${STD}$HOSTNAME \t ${GREEN}|RDNS:${STD}$RDNS \t ${GREEN}|PTR:${STD}$PTR"
+	echo -e "${GREEN}------------------------------------------------------------------------------------------------------------------${STD}"
+	echo -e "${GREEN}|PANEL DE CONTROL:${STD}$PANEL \t ${GREEN}|VERSION DEL PANEL:${STD}$PANELversion"
+	echo -e "${GREEN}|LET'S ENCRYT:${STD}$letsencrytstatus \t ${GREEN}|MODUSERDIR:${STD}$ModUserDirstatus \t ${GREEN}|SPAMASSASINS:${STD}$Spamassasinsstatus"
+	echo -e "${GREEN}------------------------------------------------------------------------------------------------------------------${STD}"
+	echo -e "${GREEN}|APACHE:${STD}$VersionAPACHE \t ${GREEN}|WEBSERVER:${STD}$VersionWebSrv \t ${GREEN}|MYSQL:${STD}$VersionMYSQL \t ${GREEN}|CSF:${STD}$CSFversion"
+	echo -e "${GREEN}|EXIM:${STD}$VersionEXIM \t ${GREEN}|PUERTOS SMTP:${STD}$PuertosSMTP \t ${GREEN}|CORREOS EN COLA:${STD}$ColaExim"
+	echo -e "${GREEN}|IP SMTP:${STD}$IPdelSMTP"
+	echo -e "${GREEN}------------------------------------------------------------------------------------------------------------------${STD}"
+	echo -e "${GREEN}|DISCOS:${STD}\n$HD"
+	echo -e "${GREEN}------------------------------------------------------------------------------------------------------------------${STD}"
+	echo -e "${GREEN}|VERSIONES DE PHP:${STD}\n$VersionesPHP\n$VersionesModoPHP"
+	echo -e "${GREEN}------------------------------------------------------------------------------------------------------------------${STD}"
+	echo -e "${GREEN}|DNS:${STD}\n$DNS"
+	echo -e "${GREEN}------------------------------------------------------------------------------------------------------------------${STD}"
+	echo -e "${GREEN}|TOP 5 EMISORES:${STD}\n$topemisores"
+	echo -e "${GREEN}------------------------------------------------------------------------------------------------------------------${STD}"
+	echo -e "${GREEN}==================================================================================================================${STD}"
+	#echo -e "${GREEN}Mensajes del Sistema:${STD}\n$(cat /var/log/messages  | grep -i kernel | grep -i error | grep -i ext)"
 
- \n
-"
+
+
+
     pause
 }
  
