@@ -2,7 +2,7 @@
 #sok.sh - .:SERVER OK:. For Linux with DirectAdmin & CPanel by .:DANIEL BUSTAMANTE:.
 
 
-#identificamos el sistema operativo
+#Getting the SO (Operating Systema)
     if test -f /etc/redhat-release > /dev/null 2>&1;
     	then 
 	    RedHat=$(cat /etc/redhat-release)
@@ -317,6 +317,7 @@ killall -9 gzip > /dev/null 2>&1 ; killall -9 tar > /dev/null 2>&1 ; killall -9 
 		done  
 		  printf "\n"
 
+		#df -H | grep -vE '^Filesystem|tmpfs|cdrom' | awk '{ print  $1 }' //obtener unidad para aplicar tune2fs -m 1 /dev/vda1
 	
 		#do
 		 read -r -p "Indica si deseas liberar o no espacio en este servidor [SI/NO] " input
@@ -939,9 +940,10 @@ diez(){
 					sleep 4
 					else
 					cd /
-					wget https://github.com/major/MySQLTuner-perl/archive/master.zip
-					unzip master.zip
-					cd MySQLTuner-perl-master
+					wget http://mysqltuner.pl/ -O mysqltuner.pl
+					#wget https://github.com/major/MySQLTuner-perl/archive/master.zip
+					#unzip master.zip
+					#cd MySQLTuner-perl-master
 					./mysqltuner.pl
 					sleep 4
 				fi
@@ -1514,24 +1516,32 @@ dieciocho(){
 		pause
 }
 diecinueve(){
-		printf "\n"
-		echo -e "${GREEN}¡Genial! habilitemos los links/~temporales en este servidor:${STD}"
-		printf "\n"
-		printf "\n"
-		sleep 2
-		echo -e "Aplicando la configuración de ModUserDIR..."
-		sleep 2
-		printf "\n"
-		printf "\n"
-		cd /usr/local/directadmin/custombuild
-		./build set userdir_access yes
-		./build rewrite_confs
-		sleep 3
-		printf "\n"
-		echo -e "${GREEN}¡Listo! ya podrás utilizar IP.DE.TU.SERVER/~USUARIO${STD}"
-		printf "\n"
+			printf "\n"
+				    echo -e "Primero reinstalemos ${GREEN}SWAKS${STD} en este servidor.."
+				    printf "\n"
+				    sleep 3
+					printf "\n"
+					yum install -y swaks
+					statusswaks=INSTALADO
+					clear
+					#bajamos el csf y el iptables
+					csf -f > /dev/null 2>&1 ; csf -x > /dev/null 2>&1 ; service iptables stop > /dev/null 2>&1
+				    printf "\n"
+				    printf "\n"
+				    echo -e "${GREEN}¡Bien! Indicame el EMAIL al que vamos a enviarle el correo..${STD}"
+				    printf "\n"
+				    read -p "EMAIL: " cuentadecorreotmp;
+				    printf "\n"
 
-		pause
+					swaks --to $cuentadecorreotmp --from "daniel.bustamante@nubelider.com" --header "Subject: Email via Console SSH" --body "Este es un email de prueba generado por Daniel Bustamante SysAdmin" --server mail.nubelider.com --port 587 --timeout 40s --auth LOGIN --auth-user "daniel.bustamante@nubelider.com" --auth-password "MaLauri2588" -tls
+				    sleep 2
+				    
+				    printf "\n"
+				    printf "\n"
+				    echo -e "${GREEN}¡Bien! valida en la bandeja de entrada de $cuentadecorreotmp ..${STD}"
+					printf "\n"
+					printf "\n"
+					pause
 }
 veinte(){
 		printf "\n"
@@ -1657,7 +1667,7 @@ mostrar_menu() {
 	echo "16) Recontar Cuotas de un Usuario en Directadmin"
 	echo "17) FIX - Berkeley DB error: /var/spool/exim/db/callout en EXIM"
 	echo "18) Instalar DIRECTADMIN | WHM/CPANEL (Servidor Limpio)"
-	echo "19) NADA POR AHORA."
+	echo "19) Mail de Testing con SWAKS."
 	echo "20) ESTABILIZAR Servidor Completo."
 	echo "21) OPTIMIZAR Servidor Completo."
 	echo "22) ACTUALIZAR Servidor Completo."
